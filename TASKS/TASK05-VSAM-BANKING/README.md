@@ -103,7 +103,7 @@ Updated balances after successful transactions.
 - Open ERROR-REPORT for output
 - Initialize counters
 
-## Transaction Processing Loop
+**2. Transaction Processing Loop**
 
 ```cobol
 READ TRANS-FILE UNTIL END-OF-FILE
