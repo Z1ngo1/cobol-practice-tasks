@@ -20,8 +20,8 @@
 //           SPACE=(TRK,(2,2),RLSE),                                    
 //           DCB=(DSORG=PS,RECFM=VB,LRECL=84)     
 //**********************************************************************
-//* Depending on the length and format of your reading data set 
-//* you want to set, change the DCB parameters!!! 
-//* change all words from 'YOUR' to your data, 
-//* namely DD NAMES and DATA SETS NAMES
+//* Depending on the size and format of the dataset you want to create,
+//* change the DCB settings!!! 
+//* Change all the words from 'YOUR' to your data, namely:
+//* DD NAMES AND DATA SETS NAMES
 //**********************************************************************
