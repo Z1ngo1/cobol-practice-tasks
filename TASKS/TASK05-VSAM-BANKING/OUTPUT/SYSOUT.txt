@@ -1,0 +1,13 @@
+
+DATE IS: 20231231                       
+ARCH AND DELETE: 000100                 
+ARCH AND DELETE: 000105                 
+ARCH AND DELETE: 000110                 
+ARCH AND DELETE: 000130                 
+ARCH AND DELETE: 000135                 
+----------------------------------------
+STATISTIC REPORT:                       
+RECORDS READ:      10                   
+RECORDS DELETE:     5                   
+RECORDS KEPT:       5                   
+----------------------------------------
