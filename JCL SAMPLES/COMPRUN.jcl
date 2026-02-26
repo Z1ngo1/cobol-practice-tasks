@@ -5,7 +5,7 @@
 //* DELETE IF EXISTS                                                    
 //*=====================================================================
 //STEP005  EXEC PGM=IEFBR14    
-//REPDD    DD DSN=YOUR.FILE.NAME,                             
+//REPDD    DD DSN=YOUR.DATASET,                             
 //            SPACE=(TRK,(1,0),RLSE),                                   
 //            DISP=(MOD,DELETE,DELETE)                                  
 //*=====================================================================
