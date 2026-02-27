@@ -216,11 +216,9 @@ Create PARAM-FILE (PS dataset) with cutoff date:
 
 Upload  to PS dataset manually via ISPF
 
-**Option B: Create via JCL with inline data**
+**Option B: Create via JCL**
 
-Allocate PS file and insert transaction data using IEBGENER or inline DD (see JCL SAMPLES/DATA2PS.jcl for example)
-
-Alternative: 
+Create PS file with LRECL=80 and insert inline data using IEBGENER:
 
 ```JCL
 //STEP1   EXEC PGM=IEBGENER
@@ -234,6 +232,10 @@ Alternative:
 //            SPACE=(TRK,(1,1)),
 //            DCB=(RECFM=F,LRECL=80,BLKSIZE=80)
 ```
+
+**Note:** FILLER PIC X(72) already defined in FD PARAM-REC to handle 80-byte record length (8 bytes date + 72 bytes FILLER).
+
+**Alternative:** Create temporary PS file with exact record length using SORT, ICETOOL, or IEBGENER to format data first (see [JCL SAMPLES/DATA2PS.jcl](../../JCL%20SAMPLES/DATA2PS.jcl) for similar example).
 
 ### Step 4: Execute Program
 
