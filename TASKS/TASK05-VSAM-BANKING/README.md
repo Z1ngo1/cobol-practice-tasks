@@ -139,33 +139,19 @@ END-PERFORM
 
 ## JCL Jobs
 
-### 1. [DEFKSDS.jcl](JCL/DEFKSDS.jcl) - Define VSAM Cluster
-
-Defines KSDS cluster for account master file.
-
-**Key Parameters:**
-- RECORDSIZE(32,32) - Fixed 32-byte records
-- KEYS(5 0) - 5-byte key starting at position 0
-- TRACKS(15) - Initial allocation
-- INDEXED - KSDS organization
-
-### 2. [COMPRUN.jcl](JCL/COMPRUN.jcl) - Compile and Execute
-
-Standard compile-link-go JCL using MYCOMPGO procedure.
-
 ## How to Run
 
 ### Step 1: Define VSAM Cluster
 
-**Submit:** JCL/DEFKSDS.jcl
+**Submit:** [JCL/DEFKSDS.jcl](JCL/DEFKSDS.jcl)  
 **Verify:** Check for MAXCC=0 in job output
 
 ### Step 2: Load Master Data into VSAM
 
-**Option A : Use File Manager**
+**Option A: Use File Manager**
 1. Navigate to VSAM file in ISPF 
 2. Open with File Manager (FM)
-3. Insert records manually from DATA/ACCT-MASTER-BEFORE
+3. Insert records manually from [DATA/ACCT-MASTER-BEFORE](DATA/ACCT-MASTER-BEFORE)
 
 **Option B: Use REPRO with inline data**
 
@@ -177,9 +163,9 @@ See JCL-SAMPLES folder for REPRO example JCL.
 
 ### Step 3: Prepare Transaction File
 
-**Option A : Manual upload**
+**Option A: Manual upload**
 
-Upload DATA/TRANS-FILE-INPUT to PS dataset manually via ISPF 
+Upload [DATA/TRANS-FILE-INPUT](DATA/TRANS-FILE-INPUT) to PS dataset manually via ISPF
 
 **Option B: Create via JCL**
 
@@ -187,13 +173,13 @@ Allocate PS file and insert transaction data using IEBGENER or inline DD.
 
 ### Step 4: Execute Program
 
-**Submit:** JCL/COMPRUN.jcl
-**Check:** SYSOUT for statistics and FILE STATUS messages
-**Review:** ERROR-REPORT-OUTPUT for failed transactions
+**Submit:** [JCL/COMPRUN.jcl](JCL/COMPRUN.jcl)  
+**Check:** SYSOUT for statistics and FILE STATUS messages  
+**Review:** [ERROR-REPORT-OUTPUT](DATA/ERROR-REPORT-OUTPUT) for failed transactions
 
 ### Step 5: Verify Results
 
-Compare updated VSAM file content with expected results in DATA/ACCT-MASTER-AFTER
+Compare updated VSAM file content with expected results in [DATA/ACCT-MASTER-AFTER](DATA/ACCT-MASTER-AFTER)
 
 ## Key Concepts Demonstrated
 
