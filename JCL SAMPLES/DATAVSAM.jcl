@@ -47,3 +47,8 @@
   REPRO INFILE(INDD) -                                                 
         OUTFILE(OUTDD)                                                 
 /*                                                                     
+//**********************************************************************
+//* Depending on the size and format of the dataset you want to create,
+//* change the DCB settings!!! 
+//* Change all the words from 'YOUR' to your data 
+//**********************************************************************
