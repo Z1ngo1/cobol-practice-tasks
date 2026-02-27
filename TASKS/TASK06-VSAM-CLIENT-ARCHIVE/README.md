@@ -233,9 +233,9 @@ Upload  to PS dataset manually via ISPF
 
 ### Step 4: Execute Program
 
-**Submit:** JCL/COMPRUN.jcl
-**Check:** SYSOUT for statistics and FILE STATUS messages
-**Review:** ARCH-FILE-OUTPUT for archived clients
+**Submit:** [JCL/COMPRUN.jcl](JCL/COMPRUN.jcl)  
+**Check:** SYSOUT for statistics and FILE STATUS messages  
+**Review:** [DATA/ARCHIVE-OLD-OUTPUT](DATA/ARCHIVE-OLD-OUTPUT) for archived clients
 
 ### Step 5: Verify Results
 
@@ -284,8 +284,9 @@ Upload  to PS dataset manually via ISPF
 
 ## Program Output (SYSOUT)
 
-Expected execution log -
-See OUTPUT/SYSOUT.txt for full output example.
+## Program Output (SYSOUT)
+
+Expected execution log - see [OUTPUT/SYSOUT.txt](OUTPUT/SYSOUT.txt) for full output example.
 
 ## Notes
 
