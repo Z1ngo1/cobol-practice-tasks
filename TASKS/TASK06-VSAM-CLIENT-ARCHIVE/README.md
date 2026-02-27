@@ -197,7 +197,7 @@ Standard compile-link-go JCL using MYCOMPGO procedure.
 
 ### Step 2: Load Master Data into VSAM
 
-**Option A (Recommended): Use File Manager**
+**Option A: Use File Manager**
 1. Navigate to VSAM file in ISPF 
 2. Open with File Manager (FM)
 3. Insert records manually from [DATA/CLIENT-MASTER-BEFORE](DATA/CLIENT-MASTER-BEFORE)
