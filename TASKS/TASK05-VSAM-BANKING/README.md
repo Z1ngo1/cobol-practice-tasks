@@ -67,88 +67,51 @@ Updated balances after successful transactions.
 
 **Expected Final State:** [DATA/ACCT-MASTER-AFTER](DATA/ACCT-MASTER-AFTER)
 
-## Data Format Examples
-
-### Transaction Record Format
-
-**Raw data:** 10001D0050000
-
-**Breakdown:**
-- 10001 - Account number (5 chars)
-- D - Transaction type (1 char): D=Deposit, W=Withdraw
-- 0050000 - Amount (7 digits): 0050000 = 500.00
-
-### Account Master Record Format
-
-**Raw data:** 10001IVAN IVANOV         0100000
-
-**Breakdown:**
-- 10001 - Account number (5 chars)
-- IVAN IVANOV          - Customer name (20 chars, padded with spaces)
-- 0100000 - Balance (7 digits): 0100000 = 1000.00
-
-## Program Logic
-
-### Main Processing Flow
-
-**1. Initialization**
-- Open VSAM file in I-O mode (INPUT-OUTPUT)
-- Open TRANS-FILE for input
-- Open ERROR-REPORT for output
-- Initialize counters
-
-**2. Transaction Processing Loop**
-
-```cobol
-READ TRANS-FILE UNTIL END-OF-FILE
-    READ ACCT-MASTER KEY IS TRANS-ACCT
-    IF FOUND (FILE STATUS = '00')
-        IF TRANS-TYPE = 'D'
-            ADD TRANS-AMOUNT TO ACCT-BALANCE
-            CHECK FOR OVERFLOW
-            REWRITE ACCT-RECORD
-        ELSE IF TRANS-TYPE = 'W'
-            IF ACCT-BALANCE >= TRANS-AMOUNT
-                SUBTRACT TRANS-AMOUNT FROM ACCT-BALANCE
-                REWRITE ACCT-RECORD
-            ELSE
-                WRITE ERROR "INSUFFICIENT FUNDS"
-            END-IF
-        END-IF
-    ELSE IF FILE STATUS = '23'
-        WRITE ERROR "ACCOUNT NOT FOUND"
-    END-IF
-END-PERFORM
-```
-
-**3. Termination**
-- Display statistics (total processed, errors)
-- Close all files
-
 ### Error Handling
 
 **FILE STATUS Codes:**
 - 00 - Successful operation
 - 23 - Record not found (invalid account number)
-- Other codes - I/O errors (logged to SYSOUT)
+- Other codes - I/O errors (logged to SYSOUT)  
 
-**Business Rule Validations:**
-- Account existence check before processing
-- Sufficient funds check for withdrawals
-- Numeric overflow detection (balance > 999999.99)
+## Program Flow
+
+1. Opens all files (VSAM in I-O mode, TRANS-FILE for input, ERROR-REPORT for output)
+2. Reads transactions sequentially from TRANS-FILE
+3. For each transaction - performs random READ from VSAM by account number:
+   - Deposit: adds amount to balance, checks overflow, rewrites record
+   - Withdrawal: checks sufficient funds, subtracts amount, rewrites record
+   - Not found: writes error to report
+4. Displays statistics (total processed, errors)
+5. Validates FILE STATUS after every operation
 
 ## JCL Jobs
-
-## How to Run
 
 ### 1. [DEFKSDS.jcl](JCL/DEFKSDS.jcl) - Define VSAM Cluster
 
 Defines KSDS cluster for account master file.
+
 **Key Parameters:**
 - RECORDSIZE(32,32) - Fixed 32-byte records
 - KEYS(5 0) - 5-byte key starting at position 0
 - TRACKS(15) - Initial allocation
 - INDEXED - KSDS organization
+
+### 2. [COMPRUN.jcl](JCL/COMPRUN.jcl) - Compile and Execute
+
+Standard compile-link-go JCL using MYCOMPGO procedure.
+
+**DD Statements:**
+- VSAM-DD - ACCT.MASTER (VSAM KSDS)
+- TRANS-DD - TRANS-FILE (PS)
+- ERROR-DD - ERROR-REPORT (PS)
+
+## How to Run
+
+### Step 1: Define VSAM Cluster
+
+**Submit:** [JCL/DEFKSDS.jcl](JCL/DEFKSDS.jcl)  
+**Verify:** Check for MAXCC=0 in job output
 
 ### Step 2: Load Master Data into VSAM
 
@@ -160,8 +123,40 @@ Defines KSDS cluster for account master file.
 **Option B: Use REPRO with inline data**
 
 **Important:** Inline DD * data is padded to 80 bytes. You must either:
-- Define VSAM with RECORDSIZE(80,80) to match inline format and add FILLER PIC X(48) to FD ACCT-RECORD in COBOL program, OR
-- Create temporary PS file with exact record length (32 bytes), load data there first, then REPRO to VSAM. Example in [JCL SAMPLES/DATAVSAM.jcl](../../JCL%20SAMPLES/DATAVSAM.jcl) uses SORT utility (can also be done with ICETOOL, IEBGENER)
+- Define VSAM with RECORDSIZE(80,80) to match inline format and add FILLER PIC X(48) to FD ACCT-RECORD in COBOL program
+
+```JCL
+//********************************************
+//* STEP 1: DEFINE VSAM CLUSTER              
+//********************************************
+//STEP10   EXEC PGM=IDCAMS                             
+//SYSPRINT DD SYSOUT=*                                 
+//SYSOUT   DD SYSOUT=*                                 
+//SYSIN    DD *                                        
+  DEFINE CLUSTER (NAME(YOUR.VSAM.CLUSTER) -
+           RECORDSIZE(80 80)               -           
+           TRACKS(1 1)                     -           
+           KEYS(20 0)                      -          
+           CISZ(4096)                      -           
+           FREESPACE(10 20)                -           
+           INDEXED)                                    
+/*
+//********************************************
+//* STEP 2: LOAD DATA INTO VSAM USING REPRO  
+//********************************************
+//STEP20   EXEC PGM=IDCAMS
+//SYSPRINT DD SYSOUT=*
+//SYSOUT   DD SYSOUT=*
+//INFILE   DD *
+YOUR DATA HERE
+/*
+//SYSIN    DD *
+  REPRO INFILE(INFILE) -
+        OUTDATASET(YOUR.VSAM.CLUSTER)
+/*
+```
+
+- OR Create temporary PS file with exact record length (32 bytes), load data there first, then REPRO to VSAM. Example in [JCL SAMPLES/DATAVSAM.jcl](../../JCL%20SAMPLES/DATAVSAM.jcl) uses SORT utility (can also be done with ICETOOL, IEBGENER)
 
 ### Step 3: Prepare Transaction File
 
@@ -175,6 +170,19 @@ Allocate PS file and insert transaction data using IEBGENER or inline DD (see [J
 
 **Alternative:** Create PS file with LRECL=80 and insert inline data directly, but requires adding FILLER PIC X(67) to FD TRANS-RECORD in COBOL program to match 80-byte record length
 
+```JCL
+//STEP1   EXEC PGM=IEBGENER
+//SYSPRINT DD SYSOUT=*
+//SYSIN    DD DUMMY
+//SYSUT1   DD *
+YOUR DATA HERE
+/*
+//SYSUT2   DD DSN=YOUR.DATA.SET,
+//            DISP=(NEW,CATLG,DELETE),
+//            SPACE=(TRK,(1,1)),
+//            DCB=(RECFM=F,LRECL=80,BLKSIZE=80)
+```
+
 ### Step 4: Execute Program
 
 **Submit:** [JCL/COMPRUN.jcl](JCL/COMPRUN.jcl)  
@@ -184,16 +192,6 @@ Allocate PS file and insert transaction data using IEBGENER or inline DD (see [J
 ### Step 5: Verify Results
 
 Compare updated VSAM file content with expected results in [DATA/ACCT-MASTER-AFTER](DATA/ACCT-MASTER-AFTER)
-
-## Key Concepts Demonstrated
-
-- VSAM Random Access - Direct read by key
-- READ statement - With KEY IS clause
-- REWRITE statement - Update existing record
-- FILE STATUS checking - Validate every I/O operation
-- Transaction validation - Business rules enforcement
-- Error handling - Graceful failure with logging
-- Numeric overflow - Detection and prevention
 
 ## Common Issues
 
