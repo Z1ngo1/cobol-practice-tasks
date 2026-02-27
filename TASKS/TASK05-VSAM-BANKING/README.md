@@ -44,7 +44,7 @@ A bank needs to process daily transactions (deposits and withdrawals) against cu
   - 05  TRANS-TYPE      PIC X(1).
   - 05  TRANS-AMOUNT    PIC 9(5)V99.
 
-**Sample Data:** See DATA/TRANS-FILE-INPUT
+**Sample Data:** [DATA/TRANS-FILE-INPUT](DATA/TRANS-FILE-INPUT)
 
 ### Output Files
 
@@ -59,13 +59,13 @@ A bank needs to process daily transactions (deposits and withdrawals) against cu
 - INSUFFICIENT FUNDS - Withdrawal amount exceeds current balance
 - OVERFLOW - Balance exceeds maximum limit (999999.99)
 
-**Expected Output:** See DATA/ERROR-REPORT-OUTPUT
+**Expected Output:** [DATA/ERROR-REPORT-OUTPUT](DATA/ERROR-REPORT-OUTPUT)
 
 #### 4. ACCT.MASTER (VSAM KSDS) - Updated Master File
 
 Updated balances after successful transactions.
 
-**Expected Final State:** See DATA/ACCT-MASTER-AFTER
+**Expected Final State:** [DATA/ACCT-MASTER-AFTER](DATA/ACCT-MASTER-AFTER)
 
 ## Data Format Examples
 
@@ -139,7 +139,7 @@ END-PERFORM
 
 ## JCL Jobs
 
-### 1. DEFKSDS.jcl - Define VSAM Cluster
+### 1. [DEFKSDS.jcl](JCL/DEFKSDS.jcl) - Define VSAM Cluster
 
 Defines KSDS cluster for account master file.
 
@@ -149,7 +149,7 @@ Defines KSDS cluster for account master file.
 - TRACKS(15) - Initial allocation
 - INDEXED - KSDS organization
 
-### 2. COMPRUN.jcl - Compile and Execute
+### 2. [COMPRUN.jcl](JCL/COMPRUN.jcl) - Compile and Execute
 
 Standard compile-link-go JCL using MYCOMPGO procedure.
 
