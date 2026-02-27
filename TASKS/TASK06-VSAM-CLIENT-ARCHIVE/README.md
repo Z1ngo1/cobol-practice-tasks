@@ -31,7 +31,7 @@ A company needs to archive and remove inactive client records from the master da
   - 05  CLIENT-NAME       PIC X(20).
   - 05  CLIENT-LAST-DATE  PIC 9(8).  *> YYYYMMDD format
 
-**Sample Data:** See DATA/CLIENT-MASTER-BEFORE
+**Sample Data:** [DATA/CLIENT-MASTER-BEFORE](DATA/CLIENT-MASTER-BEFORE)
 
 #### 2. PARAM-FILE (PS) - Cutoff Date Parameter
 
@@ -49,7 +49,7 @@ A company needs to archive and remove inactive client records from the master da
 
 **Logic:** Records with CLIENT-LAST-DATE <= CUTOFF-DATE are considered inactive and archived
 
-**Sample Data:** See DATA/PARAM-FILE
+**Sample Data:** [DATA/PARAM-FILE](DATA/PARAM-FILE)
 
 ### Output Files
 
@@ -69,13 +69,13 @@ A company needs to archive and remove inactive client records from the master da
   - 05  ARCH-DATE  PIC 9(8).
   - 05  FILLER     PIC X(46).
 
-**Expected Output:** See DATA/ARCHIVE-OLD-OUTPUT
+**Expected Output:** [DATA/ARCHIVE-OLD-OUTPUT](DATA/ARCHIVE-OLD-OUTPUT)
 
 #### 4. CLIENT-FILE (VSAM KSDS) - Updated Master File
 
 Active clients remaining after deletion of archived records.
 
-**Expected Final State:** See DATA/CLIENT-MASTER-AFTER
+**Expected Final State:** [DATA/CLIENT-MASTER-AFTER](DATA/CLIENT-MASTER-AFTER)
 
 ## Data Format Examples
 
@@ -109,16 +109,16 @@ Active clients remaining after deletion of archived records.
 
 ### Main Processing Flow
 
-**1. Initialization**
+**1. OPEN-FILES**
 - Open CLIENT-FILE in I-O mode (INPUT-OUTPUT) with DYNAMIC access
 - Open PARAM-FILE for input
 - Open ARCH-FILE for output
-- Initialize counters (REC-READ, REC-DELETE, REC-KEPT)
+- Check FILE STATUS for each file (stop if not '00')
 
-**2. Read Cutoff Date Parameter**
-- Read PARAM-FILE to get cutoff date
+**2. READ-CUTOFF-DATE**
+- Read PARAM-FILE to get cutoff date (YYYYMMDD format)
 - Move PARAM-DATE to WS-CUTOFF-DATE
-- Display cutoff date
+- Display cutoff date: 'DATE IS: {WS-CUTOFF-DATE}'
 - Close PARAM-FILE
 
 **3. Process All Records**
@@ -169,7 +169,7 @@ END-PERFORM
 
 ## JCL Jobs
 
-### 1. DEFKSDS.jcl - Define VSAM Cluster
+### 1. [DEFKSDS.jcl](JCL/DEFKSDS.jcl) - Define VSAM Cluster
 
 Defines KSDS cluster for client master file.
 
@@ -179,7 +179,7 @@ Defines KSDS cluster for client master file.
 - TRACKS(15) - Initial allocation
 - INDEXED - KSDS organization
 
-### 2. COMPRUN.jcl - Compile and Execute
+### 2. [COMPRUN.jcl](JCL/COMPRUN.jcl) - Compile and Execute
 
 Standard compile-link-go JCL using MYCOMPGO procedure.
 
@@ -192,21 +192,21 @@ Standard compile-link-go JCL using MYCOMPGO procedure.
 
 ### Step 1: Define VSAM Cluster
 
-**Submit:** JCL/DEFKSDS.jcl
+**Submit:** [JCL/DEFKSDS.jcl](JCL/DEFKSDS.jcl) 
 **Verify:** Check for MAXCC=0 in job output
 
 ### Step 2: Load Master Data into VSAM
 
 **Option A (Recommended): Use File Manager**
-1. Navigate to VSAM file in ISPF 3.4
+1. Navigate to VSAM file in ISPF 
 2. Open with File Manager (FM)
-3. Insert records manually from DATA/CLIENT-MASTER-BEFORE
+3. Insert records manually from [DATA/CLIENT-MASTER-BEFORE](DATA/CLIENT-MASTER-BEFORE)
 
 **Option B: Use REPRO with inline data**
 
 **Important:** Inline DD * data is padded to 80 bytes. You must either:
-- Define VSAM with RECORDSIZE(80,80) to match inline format, OR
-- Create temporary PS file with exact record length (34 bytes), load data there first, then REPRO to VSAM
+- Define VSAM with RECORDSIZE(80,80) to match inline format and add FILLER PIC X(46) to FD CLIENT-REC in COBOL program, OR
+- Create temporary PS file with exact record length (34 bytes), load data there first, then REPRO to VSAM. Example in [JCL SAMPLES/DATAVSAM.jcl](../../JCL%20SAMPLES/DATAVSAM.jcl) uses SORT utility (can also be done with ICETOOL, IEBGENER)
 
 See JCL-SAMPLES folder for REPRO example JCL.
 
