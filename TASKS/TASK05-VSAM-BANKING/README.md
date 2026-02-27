@@ -159,6 +159,8 @@ END-PERFORM
 - Define VSAM with RECORDSIZE(80,80) to match inline format and add FILLER PIC X(48) to FD ACCT-RECORD in COBOL program, OR
 - Create temporary PS file with exact record length (32 bytes), load data there first, then REPRO to VSAM. Example in [JCL SAMPLES/DATAVSAM.jcl](../../JCL%20SAMPLES/DATAVSAM.jcl) uses SORT utility (can also be done with ICETOOL, IEBGENER)
 
+### Step 3: Prepare Transaction File
+
 **Option A: Manual upload**
 
 Upload [DATA/TRANS-FILE-INPUT](DATA/TRANS-FILE-INPUT) to PS dataset manually via ISPF
