@@ -96,14 +96,53 @@ Active clients remaining after deletion of archived records.
 
 ## Program Flow
 
-1. Opens all files (CLIENT-FILE in I-O mode, PARAM-FILE for input, ARCH-FILE for output)
-2. Reads cutoff date from PARAM-FILE (YYYYMMDD format)
-3. Positions at start of VSAM using START with LOW-VALUES
-4. Reads all records sequentially - for each record:
-   - If CLIENT-LAST-DATE <= CUTOFF-DATE: writes to archive file and deletes from VSAM
-   - Otherwise: keeps record in master file
-5. Displays statistics report with counts (READ/DELETE/KEPT)
-6. Validates FILE STATUS after every operation and stops on errors
+1. **Initialization**
+   - Opens CLIENT-FILE (VSAM KSDS) in I-O mode with DYNAMIC access
+   - Opens PARAM-FILE (PS) for sequential input
+   - Opens ARCH-FILE (PS) for sequential output
+   - Initializes counters (REC-READ, REC-DELETE, REC-KEPT)
+   - Validates FILE STATUS for all OPEN operations ('00' = success)
+
+2. **Read Cutoff Date Parameter**
+   - Reads single record from PARAM-FILE
+   - Extracts PARAM-DATE (8 bytes in YYYYMMDD format)
+   - Moves to WS-CUTOFF-DATE working storage variable
+   - Displays cutoff date to SYSOUT for verification
+   - Closes PARAM-FILE
+
+3. **Position VSAM for Sequential Processing**
+   - Moves LOW-VALUES to CLIENT-ID
+   - Executes START CLIENT-FILE KEY IS NOT LESS THAN CLIENT-ID
+   - Positions file pointer at first record in key sequence
+   - Handles FILE STATUS '23' (empty file) gracefully
+
+4. **Sequential Read and Process Loop**
+   - Performs READ NEXT until end of file (EOF)
+   - For each CLIENT-REC read:
+     - Increments REC-READ counter
+     - Compares CLIENT-LAST-DATE with WS-CUTOFF-DATE
+     - **If CLIENT-LAST-DATE <= WS-CUTOFF-DATE (inactive client)**:
+       - Writes CLIENT-REC to ARCH-FILE (sequential write)
+       - Validates ARCH-STATUS = '00'
+       - Deletes current record from VSAM using DELETE statement
+       - Validates CLIENT-STATUS = '00' after DELETE
+       - Increments REC-DELETE counter
+       - Displays "ARCH AND DELETE: {CLIENT-ID}" to SYSOUT
+     - **If CLIENT-LAST-DATE > WS-CUTOFF-DATE (active client)**:
+       - Keeps record in VSAM (no action)
+       - Increments REC-KEPT counter
+   - READ NEXT automatically advances to next record after DELETE
+
+5. **Termination**
+   - Closes CLIENT-FILE and ARCH-FILE
+   - Validates FILE STATUS for CLOSE operations
+   - Formats counters with edited picture (Z(4)9) to suppress leading zeros
+   - Displays statistics report to SYSOUT:
+     - RECORDS READ: total records processed
+     - RECORDS DELETE: clients archived and removed
+     - RECORDS KEPT: active clients remaining
+   - Verifies equation: REC-READ = REC-DELETE + REC-KEPT
+   - Stops execution with proper return code
 
 ## JCL Jobs
 
@@ -142,8 +181,7 @@ Standard compile-link-go JCL using MYCOMPGO procedure.
 
 **Option B: Use REPRO with inline data**
 
-**Important:** Inline DD * data is padded to 80 bytes. You must either:
-- Define VSAM with RECORDSIZE(80,80) to match inline format and add FILLER PIC X(46) to FD CLIENT-REC in COBOL program
+**⚠️ Note:** Inline DD * data is padded to 80 bytes. Verify FD includes FILLER to match LRECL/RECORDSIZE.
 
 ```JCL
 //********************************************
@@ -188,6 +226,8 @@ Upload  to PS dataset manually via ISPF
 
 Create PS file with LRECL=80 and insert inline data using IEBGENER:
 
+**⚠️ Note:** Inline DD * data is padded to 80 bytes. Verify FD includes FILLER to match LRECL/RECORDSIZE.
+
 ```JCL
 //STEP1   EXEC PGM=IEBGENER
 //SYSPRINT DD SYSOUT=*
@@ -201,9 +241,7 @@ YOUR DATA HERE
 //            DCB=(RECFM=F,LRECL=80,BLKSIZE=80)
 ```
 
-**Note:** FILLER PIC X(72) already defined in FD PARAM-REC to handle 80-byte record length (8 bytes date + 72 bytes FILLER).
-
-**Alternative:** Create temporary PS file with exact record length using SORT, ICETOOL, or IEBGENER to format data first (see [JCL SAMPLES/DATA2PS.jcl](../../JCL%20SAMPLES/DATA2PS.jcl) for similar example).
+**Alternative:** Allocate PS file and insert exact length of your file transaction data using IEBGENER (see [JCL SAMPLES/DATA2PS.jcl](../../JCL%20SAMPLES/DATA2PS.jcl) for example)
 
 ### Step 4: Execute Program
 
