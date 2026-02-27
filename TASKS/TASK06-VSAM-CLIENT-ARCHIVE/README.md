@@ -130,7 +130,7 @@ Standard compile-link-go JCL using MYCOMPGO procedure.
 
 ### Step 1: Define VSAM Cluster
 
-**Submit:** [JCL/DEFKSDS.jcl](JCL/DEFKSDS.jcl) 
+**Submit:** [JCL/DEFKSDS.jcl](JCL/DEFKSDS.jcl)  
 **Verify:** Check for MAXCC=0 in job output
 
 ### Step 2: Load Master Data into VSAM
