@@ -157,7 +157,7 @@ END-PERFORM
 
 **Important:** Inline DD * data is padded to 80 bytes. You must either:
 - Define VSAM with RECORDSIZE(80,80) to match inline format, OR
-- Create temporary PS file with exact record length (32 bytes), load data there first, then REPRO to VSAM (see [JCL-SAMPLES/DATAVSAM.jcl](JCL-SAMPLES/DATAVSAM.jcl) for example using ICETOOL and IEBGENER methods)
+- Create temporary PS file with exact record length (32 bytes), load data there first, then REPRO to VSAM (see [JCL SAMPLES/DATAVSAM.jcl](../../JCL%20SAMPLES/DATAVSAM.jcl) for example using ICETOOL and IEBGENER methods)
 
 ### Step 3: Prepare Transaction File
 
@@ -167,7 +167,7 @@ Upload [DATA/TRANS-FILE-INPUT](DATA/TRANS-FILE-INPUT) to PS dataset manually via
 
 **Option B: Create via JCL**
 
-Allocate PS file and insert transaction data using IEBGENER or inline DD (see [JCL-SAMPLES/DATA2PS.jcl](JCL-SAMPLES/DATA2PS.jcl) for example)
+Allocate PS file and insert transaction data using IEBGENER or inline DD (see [JCL SAMPLES/DATA2PS.jcl](../../JCL%20SAMPLES/DATA2PS.jcl) for example)
 
 ### Step 4: Execute Program
 
