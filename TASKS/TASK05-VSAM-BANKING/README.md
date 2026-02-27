@@ -217,10 +217,6 @@ Compare updated VSAM file content with expected results in [DATA/ACCT-MASTER-AFT
 **Cause:** Transaction file processed out of order
 **Solution:** Verify transaction sequence in input file
 
-## Program Output (SYSOUT)
-
-Expected execution log - see OUTPUT/SYSOUT.txt for full output example.
-
 ## Notes
 
 - Program uses random access mode for VSAM (not sequential)
