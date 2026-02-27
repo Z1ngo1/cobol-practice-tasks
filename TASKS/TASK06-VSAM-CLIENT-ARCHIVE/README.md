@@ -49,7 +49,7 @@ A company needs to archive and remove inactive client records from the master da
 
 **Logic:** Records with CLIENT-LAST-DATE <= CUTOFF-DATE are considered inactive and archived
 
-**Sample Data:** [DATA/PARAM-FILE](DATA/PARAM-FILE)
+**Sample Data:** [DATA/PARAM-FILE](DATA/PARAM-FILE-INPUT)
 
 ### Output Files
 
@@ -208,16 +208,13 @@ Standard compile-link-go JCL using MYCOMPGO procedure.
 - Define VSAM with RECORDSIZE(80,80) to match inline format and add FILLER PIC X(46) to FD CLIENT-REC in COBOL program, OR
 - Create temporary PS file with exact record length (34 bytes), load data there first, then REPRO to VSAM. Example in [JCL SAMPLES/DATAVSAM.jcl](../../JCL%20SAMPLES/DATAVSAM.jcl) uses SORT utility (can also be done with ICETOOL, IEBGENER)
 
-See JCL-SAMPLES folder for REPRO example JCL.
-
 ### Step 3: Prepare Parameter File
 
 Create PARAM-FILE (PS dataset) with cutoff date:
 
 **Option A: Upload via ISPF 3.4**
-- DSN: Z73460.TASK06.PARAM.FILE
-- RECFM=F, LRECL=80, BLKSIZE=80
-- Content: 20231231 followed by 72 spaces
+
+Upload  to PS dataset manually via ISPF
 
 **Option B: Create via JCL with inline data**
 
