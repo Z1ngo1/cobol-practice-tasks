@@ -76,14 +76,36 @@ Updated balances after successful transactions.
 
 ## Program Flow
 
-1. Opens all files (VSAM in I-O mode, TRANS-FILE for input, ERROR-REPORT for output)
-2. Reads transactions sequentially from TRANS-FILE
-3. For each transaction - performs random READ from VSAM by account number:
-   - Deposit: adds amount to balance, checks overflow, rewrites record
-   - Withdrawal: checks sufficient funds, subtracts amount, rewrites record
-   - Not found: writes error to report
-4. Displays statistics (total processed, errors)
-5. Validates FILE STATUS after every operation
+1. **Initialization**
+   - Opens ACCT.MASTER (VSAM KSDS) in I-O mode for random access
+   - Opens TRANS-FILE (PS) for sequential input
+   - Opens ERROR-REPORT (PS) for sequential output
+   - Initializes counters for statistics tracking
+
+2. **Transaction Processing Loop**
+   - Reads transaction records sequentially from TRANS-FILE
+   - For each transaction:
+     - Performs random READ from VSAM using TRANS-ACCT as key
+     - If account found (FILE STATUS '00'):
+       - **Deposit (TRANS-TYPE = 'D')**: 
+         - Adds TRANS-AMOUNT to ACCT-BALANCE
+         - Checks for numeric overflow (balance > 999999.99)
+         - Rewrites updated record to VSAM
+       - **Withdrawal (TRANS-TYPE = 'W')**: 
+         - Validates sufficient funds (ACCT-BALANCE >= TRANS-AMOUNT)
+         - Subtracts TRANS-AMOUNT from ACCT-BALANCE
+         - Rewrites updated record to VSAM
+         - Writes error if insufficient funds
+     - If account not found (FILE STATUS '23'):
+       - Writes error message to ERROR-REPORT with account number
+
+3. **Termination**
+   - Closes all files (VSAM, TRANS-FILE, ERROR-REPORT)
+   - Displays processing statistics:
+     - Total transactions processed
+     - Successful updates
+     - Total errors (account not found + insufficient funds + overflow)
+   - Validates FILE STATUS after every file operation
 
 ## JCL Jobs
 
@@ -124,6 +146,8 @@ Standard compile-link-go JCL using MYCOMPGO procedure.
 
 **Important:** Inline DD * data is padded to 80 bytes. You must either:
 - Define VSAM with RECORDSIZE(80,80) to match inline format and add FILLER PIC X(48) to FD ACCT-RECORD in COBOL program
+
+**⚠️ Note:** Inline DD * data is padded to 80 bytes. Verify FD includes FILLER to match LRECL/RECORDSIZE.
 
 ```JCL
 //********************************************
@@ -166,9 +190,9 @@ Upload [DATA/TRANS-FILE-INPUT](DATA/TRANS-FILE-INPUT) to PS dataset manually via
 
 **Option B: Create via JCL**
 
-Allocate PS file and insert transaction data using IEBGENER or inline DD (see [JCL SAMPLES/DATA2PS.jcl](../../JCL%20SAMPLES/DATA2PS.jcl) for example)
+Create PS file with LRECL=80 and insert inline data using IEBGENER:
 
-**Alternative:** Create PS file with LRECL=80 and insert inline data directly, but requires adding FILLER PIC X(67) to FD TRANS-RECORD in COBOL program to match 80-byte record length
+**⚠️ Note:** Inline DD * data is padded to 80 bytes. Verify FD includes FILLER to match LRECL/RECORDSIZE.
 
 ```JCL
 //STEP1   EXEC PGM=IEBGENER
@@ -182,6 +206,8 @@ YOUR DATA HERE
 //            SPACE=(TRK,(1,1)),
 //            DCB=(RECFM=F,LRECL=80,BLKSIZE=80)
 ```
+
+**Alternative:** Allocate PS file and insert exact length of your file transaction data using IEBGENER (see [JCL SAMPLES/DATA2PS.jcl](../../JCL%20SAMPLES/DATA2PS.jcl) for example)
 
 ### Step 4: Execute Program
 
