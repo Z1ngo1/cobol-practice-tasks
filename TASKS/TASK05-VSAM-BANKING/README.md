@@ -34,12 +34,9 @@ A bank needs to process daily transactions (deposits and withdrawals) against cu
 
 #### 2. TRANS-FILE (PS) - Transaction File
 
-**Access Mode:** 
-- INPUT (Sequential)
-**Organization:**
-- SEQUENTIAL
-**Record Format:**
-- Fixed (RECFM=FB, LRECL=13)
+- **Access Mode:** INPUT (Sequential)
+- **Organization:** SEQUENTIAL
+- **Record Format:** Fixed (RECFM=FB, LRECL=13)
 
 **Record Layout:**
 - 01  TRANS-RECORD.
@@ -53,12 +50,9 @@ A bank needs to process daily transactions (deposits and withdrawals) against cu
 
 #### 3. ERROR-REPORT (PS) - Error Report
 
-**Access Mode:** 
-- OUTPUT (Sequential)
-**Organization:**
-- SEQUENTIAL
-**Record Format:**
-- Variable (RECFM=VB, LRECL=84)
+- **Access Mode:** OUTPUT (Sequential)
+- **Organization:** SEQUENTIAL
+- **Record Format:** Variable (RECFM=VB, LRECL=84)
 
 **Error Types:**
 - ACCOUNT NOT FOUND - Account number doesn't exist in master file
@@ -168,8 +162,8 @@ Standard compile-link-go JCL using MYCOMPGO procedure.
 
 ### Step 2: Load Master Data into VSAM
 
-**Option A (Recommended): Use File Manager**
-1. Navigate to VSAM file in ISPF 3.4
+**Option A : Use File Manager**
+1. Navigate to VSAM file in ISPF 
 2. Open with File Manager (FM)
 3. Insert records manually from DATA/ACCT-MASTER-BEFORE
 
@@ -183,11 +177,9 @@ See JCL-SAMPLES folder for REPRO example JCL.
 
 ### Step 3: Prepare Transaction File
 
-**Option A (Recommended): Manual upload**
+**Option A : Manual upload**
 
-Upload DATA/TRANS-FILE-INPUT to PS dataset manually via ISPF 3.4 or File Manager:
-DSN: Z73460.TASK05.TRANS.FILE
-RECFM=FB, LRECL=13, BLKSIZE=130
+Upload DATA/TRANS-FILE-INPUT to PS dataset manually via ISPF 
 
 **Option B: Create via JCL**
 
