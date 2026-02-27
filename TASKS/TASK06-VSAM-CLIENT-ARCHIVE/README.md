@@ -284,8 +284,6 @@ Upload  to PS dataset manually via ISPF
 
 ## Program Output (SYSOUT)
 
-## Program Output (SYSOUT)
-
 Expected execution log - see [OUTPUT/SYSOUT.txt](OUTPUT/SYSOUT.txt) for full output example.
 
 ## Notes
