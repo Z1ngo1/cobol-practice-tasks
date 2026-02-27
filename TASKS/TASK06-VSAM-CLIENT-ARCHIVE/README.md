@@ -210,8 +210,6 @@ Standard compile-link-go JCL using MYCOMPGO procedure.
 
 ### Step 3: Prepare Parameter File
 
-Create PARAM-FILE (PS dataset) with cutoff date:
-
 **Option A: Upload via ISPF 3.4**
 
 Upload  to PS dataset manually via ISPF
