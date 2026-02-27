@@ -141,10 +141,14 @@ END-PERFORM
 
 ## How to Run
 
-### Step 1: Define VSAM Cluster
+### 1. [DEFKSDS.jcl](JCL/DEFKSDS.jcl) - Define VSAM Cluster
 
-**Submit:** [JCL/DEFKSDS.jcl](JCL/DEFKSDS.jcl)  
-**Verify:** Check for MAXCC=0 in job output
+Defines KSDS cluster for account master file.
+**Key Parameters:**
+- RECORDSIZE(32,32) - Fixed 32-byte records
+- KEYS(5 0) - 5-byte key starting at position 0
+- TRACKS(15) - Initial allocation
+- INDEXED - KSDS organization
 
 ### Step 2: Load Master Data into VSAM
 
