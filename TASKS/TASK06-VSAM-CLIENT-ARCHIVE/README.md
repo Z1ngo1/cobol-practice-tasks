@@ -218,6 +218,10 @@ Upload  to PS dataset manually via ISPF
 
 **Option B: Create via JCL with inline data**
 
+Allocate PS file and insert transaction data using IEBGENER or inline DD (see JCL SAMPLES/DATA2PS.jcl for example)
+
+Alternative: 
+
 ```JCL
 //STEP1   EXEC PGM=IEBGENER
 //SYSPRINT DD SYSOUT=*
