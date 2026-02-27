@@ -238,7 +238,7 @@ Create PS file with LRECL=80 and insert inline data using IEBGENER:
 ### Step 4: Execute Program
 
 **Submit:** [JCL/COMPRUN.jcl](JCL/COMPRUN.jcl)  
-**Check:** SYSOUT for statistics and FILE STATUS messages  
+**Check:** SYSOUT for statistics and FILE STATUS messages (see [OUTPUT/SYSOUT.txt](OUTPUT/SYSOUT.txt))
 **Review:** [DATA/ARCHIVE-OLD-OUTPUT](DATA/ARCHIVE-OLD-OUTPUT) for archived clients
 
 ### Step 5: Verify Results
