@@ -77,25 +77,6 @@ Active clients remaining after deletion of archived records.
 
 **Expected Final State:** [DATA/CLIENT-MASTER-AFTER](DATA/CLIENT-MASTER-AFTER)
 
-## Data Format Examples
-
-### Client Master Record Format
-
-**Raw data:** 100001IVAN PETROV          20230115
-
-**Breakdown:**
-- 100001 - Client ID (6 chars)
-- IVAN PETROV           - Client name (20 chars, padded with spaces)
-- 20230115 - Last contact date (8 digits): January 15, 2023
-
-### Parameter File Format
-
-**Raw data:** 20231231 followed by 72 spaces (total 80 bytes)
-
-**Breakdown:**
-- 20231231 - Cutoff date (8 chars): December 31, 2023
-- FILLER - Remaining 72 bytes (padding to reach 80-byte record)
-
 ### Cutoff Date Logic
 
 **Cutoff Date:** 20231231 (December 31, 2023)
@@ -105,54 +86,6 @@ Active clients remaining after deletion of archived records.
 - 20231231 (Dec 31, 2023) <= 20231231 → INACTIVE (archive and delete)
 - 20240310 (Mar 10, 2024) > 20231231 → ACTIVE (keep in master)
 
-## Program Logic
-
-### Main Processing Flow
-
-**1. OPEN-FILES**
-- Open CLIENT-FILE in I-O mode (INPUT-OUTPUT) with DYNAMIC access
-- Open PARAM-FILE for input
-- Open ARCH-FILE for output
-- Check FILE STATUS for each file (stop if not '00')
-
-**2. READ-CUTOFF-DATE**
-- Read PARAM-FILE to get cutoff date (YYYYMMDD format)
-- Move PARAM-DATE to WS-CUTOFF-DATE
-- Display cutoff date: 'DATE IS: {WS-CUTOFF-DATE}'
-- Close PARAM-FILE
-
-**3. Process All Records**
-
-```cobol
-MOVE LOW-VALUES TO CLIENT-ID
-START CLIENT-FILE KEY IS NOT LESS THAN CLIENT-ID
-
-PERFORM UNTIL EOF
-    READ CLIENT-FILE NEXT RECORD
-        AT END
-            SET EOF TO TRUE
-        NOT AT END
-            ADD 1 TO REC-READ
-            IF CLIENT-LAST-DATE <= WS-CUTOFF-DATE
-                WRITE ARCH-REC FROM CLIENT-REC
-                DELETE CLIENT-FILE
-                ADD 1 TO REC-DELETE
-                DISPLAY 'ARCH AND DELETE: ' CLIENT-ID
-            ELSE
-                ADD 1 TO REC-KEPT
-            END-IF
-    END-READ
-END-PERFORM
-```
-
-**4. Termination**
-- Close CLIENT-FILE
-- Close ARCH-FILE
-- Display statistics report:
-  - RECORDS READ
-  - RECORDS DELETE
-  - RECORDS KEPT
-
 ### Error Handling
 
 **FILE STATUS Codes:**
@@ -161,11 +94,16 @@ END-PERFORM
 - 92 - Logic error (file not opened or wrong access mode)
 - Other codes - I/O errors (program stops with error message)
 
-**Business Rule Validations:**
-- Date comparison: CLIENT-LAST-DATE <= WS-CUTOFF-DATE (inactive clients)
-- Write to archive file before deletion
-- Check FILE STATUS after every operation (OPEN, READ, WRITE, DELETE, CLOSE)
-- Display error messages and stop if critical errors occur
+## Program Flow
+
+1. Opens all files (CLIENT-FILE in I-O mode, PARAM-FILE for input, ARCH-FILE for output)
+2. Reads cutoff date from PARAM-FILE (YYYYMMDD format)
+3. Positions at start of VSAM using START with LOW-VALUES
+4. Reads all records sequentially - for each record:
+   - If CLIENT-LAST-DATE <= CUTOFF-DATE: writes to archive file and deletes from VSAM
+   - Otherwise: keeps record in master file
+5. Displays statistics report with counts (READ/DELETE/KEPT)
+6. Validates FILE STATUS after every operation and stops on errors
 
 ## JCL Jobs
 
@@ -205,8 +143,40 @@ Standard compile-link-go JCL using MYCOMPGO procedure.
 **Option B: Use REPRO with inline data**
 
 **Important:** Inline DD * data is padded to 80 bytes. You must either:
-- Define VSAM with RECORDSIZE(80,80) to match inline format and add FILLER PIC X(46) to FD CLIENT-REC in COBOL program, OR
-- Create temporary PS file with exact record length (34 bytes), load data there first, then REPRO to VSAM. Example in [JCL SAMPLES/DATAVSAM.jcl](../../JCL%20SAMPLES/DATAVSAM.jcl) uses SORT utility (can also be done with ICETOOL, IEBGENER)
+- Define VSAM with RECORDSIZE(80,80) to match inline format and add FILLER PIC X(46) to FD CLIENT-REC in COBOL program
+
+```JCL
+//********************************************
+//* STEP 1: DEFINE VSAM CLUSTER              
+//********************************************
+//STEP10   EXEC PGM=IDCAMS                             
+//SYSPRINT DD SYSOUT=*                                 
+//SYSOUT   DD SYSOUT=*                                 
+//SYSIN    DD *                                        
+  DEFINE CLUSTER (NAME(YOUR.VSAM.CLUSTER) -
+           RECORDSIZE(80 80)               -           
+           TRACKS(1 1)                     -           
+           KEYS(20 0)                      -          
+           CISZ(4096)                      -           
+           FREESPACE(10 20)                -           
+           INDEXED)                                    
+/*
+//********************************************
+//* STEP 2: LOAD DATA INTO VSAM USING REPRO  
+//********************************************
+//STEP20   EXEC PGM=IDCAMS
+//SYSPRINT DD SYSOUT=*
+//SYSOUT   DD SYSOUT=*
+//INFILE   DD *
+YOUR DATA HERE
+/*
+//SYSIN    DD *
+  REPRO INFILE(INFILE) -
+        OUTDATASET(YOUR.VSAM.CLUSTER)
+/*
+```
+                              
+- Or Create temporary PS file with exact record length (34 bytes), load data there first, then REPRO to VSAM. Example in [JCL SAMPLES/DATAVSAM.jcl](../../JCL%20SAMPLES/DATAVSAM.jcl) uses SORT utility (can also be done with ICETOOL, IEBGENER)
 
 ### Step 3: Prepare Parameter File
 
@@ -223,9 +193,9 @@ Create PS file with LRECL=80 and insert inline data using IEBGENER:
 //SYSPRINT DD SYSOUT=*
 //SYSIN    DD DUMMY
 //SYSUT1   DD *
-20231231
+YOUR DATA HERE
 /*
-//SYSUT2   DD DSN=Z73460.TASK06.PARAM.FILE,
+//SYSUT2   DD DSN=YOUR.DATA.SET,
 //            DISP=(NEW,CATLG,DELETE),
 //            SPACE=(TRK,(1,1)),
 //            DCB=(RECFM=F,LRECL=80,BLKSIZE=80)
@@ -238,7 +208,7 @@ Create PS file with LRECL=80 and insert inline data using IEBGENER:
 ### Step 4: Execute Program
 
 **Submit:** [JCL/COMPRUN.jcl](JCL/COMPRUN.jcl)  
-**Check:** SYSOUT for statistics and FILE STATUS messages (see [OUTPUT/SYSOUT.txt](OUTPUT/SYSOUT.txt))
+**Check:** SYSOUT for statistics and FILE STATUS messages (see [OUTPUT/SYSOUT.txt](OUTPUT/SYSOUT.txt))  
 **Review:** [DATA/ARCHIVE-OLD-OUTPUT](DATA/ARCHIVE-OLD-OUTPUT) for archived clients
 
 ### Step 5: Verify Results
@@ -247,17 +217,6 @@ Create PS file with LRECL=80 and insert inline data using IEBGENER:
 - CLIENT-FILE - Should contain only active clients (CLIENT-LAST-DATE > CUTOFF-DATE)
 - ARCH-FILE - Should contain all inactive clients (CLIENT-LAST-DATE <= CUTOFF-DATE)
 - Verify counts: REC-READ = REC-DELETE + REC-KEPT
-
-## Key Concepts Demonstrated
-
-- VSAM Dynamic Access - Sequential read with random delete capability
-- START clause - Position file pointer at beginning (KEY IS NOT LESS THAN LOW-VALUES)
-- READ NEXT - Sequential browsing through VSAM file
-- DELETE statement - Remove current record after READ NEXT
-- Date comparison logic - Numeric comparison for YYYYMMDD format (<=)
-- Archival pattern - Write before delete to preserve data
-- FILE STATUS checking - Validate all file operations
-- External parameter file - Read configuration from PS file
 
 ## Common Issues
 
@@ -292,14 +251,8 @@ Expected execution log - see [OUTPUT/SYSOUT.txt](OUTPUT/SYSOUT.txt) for full out
 
 ## Notes
 
-- Program uses DYNAMIC access mode (allows both sequential and random operations)
-- START positions file pointer at beginning using LOW-VALUES
-- READ NEXT advances sequentially through file in key order
-- DELETE removes current record (must follow READ NEXT)
-- After DELETE, next READ NEXT automatically advances to next record
-- Archive file written sequentially - order matches VSAM key order
+- Program uses DYNAMIC access mode (allows both sequential READ NEXT and random DELETE operations)
 - Date comparison uses <= (less than or equal) - records with exact cutoff date are also archived
-- Parameter file uses fixed 80-byte records with RECFM=F
-- All counters use PIC 9(5) for up to 99,999 records
-- Display formatting uses edited fields (Z(4)9) to suppress leading zeros
+- After DELETE, next READ NEXT automatically advances to the following record
+- Archive file written sequentially in key order
 - Tested on IBM z/OS with Enterprise COBOL
