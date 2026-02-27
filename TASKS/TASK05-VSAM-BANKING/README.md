@@ -156,10 +156,8 @@ END-PERFORM
 **Option B: Use REPRO with inline data**
 
 **Important:** Inline DD * data is padded to 80 bytes. You must either:
-- Define VSAM with RECORDSIZE(80,80) to match inline format, OR
-- Create temporary PS file with exact record length (32 bytes), load data there first, then REPRO to VSAM (see [JCL SAMPLES/DATAVSAM.jcl](../../JCL%20SAMPLES/DATAVSAM.jcl) for example using ICETOOL and IEBGENER methods)
-
-### Step 3: Prepare Transaction File
+- Define VSAM with RECORDSIZE(80,80) to match inline format and add FILLER PIC X(48) to FD ACCT-RECORD in COBOL program, OR
+- Create temporary PS file with exact record length (32 bytes), load data there first, then REPRO to VSAM. Example in [JCL SAMPLES/DATAVSAM.jcl](../../JCL%20SAMPLES/DATAVSAM.jcl) uses SORT utility (can also be done with ICETOOL, IEBGENER)
 
 **Option A: Manual upload**
 
@@ -168,6 +166,8 @@ Upload [DATA/TRANS-FILE-INPUT](DATA/TRANS-FILE-INPUT) to PS dataset manually via
 **Option B: Create via JCL**
 
 Allocate PS file and insert transaction data using IEBGENER or inline DD (see [JCL SAMPLES/DATA2PS.jcl](../../JCL%20SAMPLES/DATA2PS.jcl) for example)
+
+**Alternative:** Create PS file with LRECL=80 and insert inline data directly, but requires adding FILLER PIC X(67) to FD TRANS-RECORD in COBOL program to match 80-byte record length
 
 ### Step 4: Execute Program
 
