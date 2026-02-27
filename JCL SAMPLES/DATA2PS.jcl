@@ -21,4 +21,5 @@
 //* Depending on the size and format of the dataset you want to create,
 //* change the DCB settings!!! 
 //* Change all the words from 'YOUR' to your data
+//* Change the data in SYSUT1 and RECORD FIELD in SYSIN
 //**********************************************************************
