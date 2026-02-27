@@ -30,7 +30,7 @@ A bank needs to process daily transactions (deposits and withdrawals) against cu
   - 05  ACCT-NAME       PIC X(20).
   - 05  ACCT-BALANCE    PIC 9(5)V99.
 
-**Sample Data:** See DATA/ACCT-MASTER-BEFORE
+**Sample Data:** [DATA/ACCT-MASTER-BEFORE](DATA/ACCT-MASTER-BEFORE)
 
 #### 2. TRANS-FILE (PS) - Transaction File
 
