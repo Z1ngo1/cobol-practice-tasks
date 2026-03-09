@@ -31,6 +31,6 @@
 //*   //STEP1   EXEC YOURPROCNAME,MEMBER=YOUR MEMBER
 //*   //RUN.YOURDD DD DSN=YOUR.DATA.SET,DISP=SHR
 //*   //RUN.YOURDD DD DSN=YOUR.DATA.SET,
-//*    //             DISP=(NEW,CATLG,DELETE),
+//*   //             DISP=(NEW,CATLG,DELETE),
 //*   //              SPACE=(TRK,(10,5),RLSE)
 //**********************************************************************
