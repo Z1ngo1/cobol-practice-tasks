@@ -29,15 +29,8 @@ Company performs annual salary indexing based on department policy. The system m
 **Sample Data:** [DATA/TB-EMP-SALARY-BEFORE](DATA/TB-EMP-SALARY-BEFORE)
 
 **DCLGEN Structure:** 
-- 01 DCLTB-EMP-SALARY
-  - 10 EMP-ID PIC X(5)
-  - 10 EMP-NAME
-    - 49 EMP-NAME-LEN PIC S9(4) USAGE COMP-5
-    - 49 EMP-NAME-TEXT PIC X(30)
-  - 10 DEPT-CODE PIC X(3)
-  - 10 SALARY PIC S9(7)V99 COMP-3
 
-**Sample Data:** [DATA/TB-EMP-SALARY-BEFORE](DATA/TB-EMP-SALARY-BEFORE)
+**Sample Data:** [DCLGEN/TASK7.cbl](DCLGEN/TASK7.cbl)
 
 ### Output Files
 
