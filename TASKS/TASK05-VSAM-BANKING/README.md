@@ -24,12 +24,6 @@ A bank needs to process daily transactions (deposits and withdrawals) against cu
 **Key:**
 - ACCT-NUM (5 characters, positions 1-5)
 
-**Record Layout:**
-- 01  ACCT-RECORD.
-  - 05  ACCT-NUM        PIC X(5).
-  - 05  ACCT-NAME       PIC X(20).
-  - 05  ACCT-BALANCE    PIC 9(5)V99.
-
 **Sample Data:** [DATA/ACCT-MASTER-BEFORE](DATA/ACCT-MASTER-BEFORE)
 
 #### 2. TRANS-FILE (PS) - Transaction File
@@ -37,12 +31,6 @@ A bank needs to process daily transactions (deposits and withdrawals) against cu
 - **Access Mode:** INPUT (Sequential)
 - **Organization:** SEQUENTIAL
 - **Record Format:** Fixed (RECFM=FB, LRECL=13)
-
-**Record Layout:**
-- 01  TRANS-RECORD.
-  - 05  TRANS-ACCT      PIC X(5).
-  - 05  TRANS-TYPE      PIC X(1).
-  - 05  TRANS-AMOUNT    PIC 9(5)V99.
 
 **Sample Data:** [DATA/TRANS-FILE-INPUT](DATA/TRANS-FILE-INPUT)
 
@@ -137,83 +125,38 @@ Standard compile-link-go JCL using MYCOMPGO procedure.
 
 ### Step 2: Load Master Data into VSAM
 
-**Option A: Use File Manager**
+**Use File Manager**
 1. Navigate to VSAM file in ISPF 
 2. Open with File Manager (FM)
 3. Insert records manually from [DATA/ACCT-MASTER-BEFORE](DATA/ACCT-MASTER-BEFORE)
 
-**Option B: Use REPRO with inline data**
-
-**Important:** Inline DD * data is padded to 80 bytes. You must either:
-- Define VSAM with RECORDSIZE(80,80) to match inline format and add FILLER PIC X(48) to FD ACCT-RECORD in COBOL program
-
-**⚠️ Note:** Inline DD * data is padded to 80 bytes. Verify FD includes FILLER to match LRECL/RECORDSIZE.
-
-```JCL
-//********************************************
-//* STEP 1: DEFINE VSAM CLUSTER              
-//********************************************
-//STEP10   EXEC PGM=IDCAMS                             
-//SYSPRINT DD SYSOUT=*                                 
-//SYSOUT   DD SYSOUT=*                                 
-//SYSIN    DD *                                        
-  DEFINE CLUSTER (NAME(YOUR.VSAM.CLUSTER) -
-           RECORDSIZE(80 80)               -           
-           TRACKS(1 1)                     -           
-           KEYS(20 0)                      -          
-           CISZ(4096)                      -           
-           FREESPACE(10 20)                -           
-           INDEXED)                                    
-/*
-//********************************************
-//* STEP 2: LOAD DATA INTO VSAM USING REPRO  
-//********************************************
-//STEP20   EXEC PGM=IDCAMS
-//SYSPRINT DD SYSOUT=*
-//SYSOUT   DD SYSOUT=*
-//INFILE   DD *
-YOUR DATA HERE
-/*
-//SYSIN    DD *
-  REPRO INFILE(INFILE) -
-        OUTDATASET(YOUR.VSAM.CLUSTER)
-/*
-```
-
-- OR Create temporary PS file with exact record length (32 bytes), load data there first, then REPRO to VSAM. Example in [JCL SAMPLES/DATAVSAM.jcl](../../JCL%20SAMPLES/DATAVSAM.jcl) uses SORT utility (can also be done with ICETOOL, IEBGENER)
+**Alternative:**
+1. Define VSAM with RECORDSIZE(80,80) to match inline format
+- **⚠️ Note:** Inline DD * data is padded to 80 bytes. Verify FD includes FILLER to match LRECL/RECORDSIZE.
+2. Create temporary PS file with exact record length (32 bytes), load data there first, then REPRO to VSAM.
+- Example in [JCL SAMPLES/DATAVSAM.jcl](../../JCL%20SAMPLES/DATAVSAM.jcl) uses SORT utility (can also be done with ICETOOL, IEBGENER)
 
 ### Step 3: Prepare Transaction File
 
-**Option A: Manual upload**
+**Manual upload**
 
 Upload [DATA/TRANS-FILE-INPUT](DATA/TRANS-FILE-INPUT) to PS dataset manually via ISPF
 
-**Option B: Create via JCL**
-
-Create PS file with LRECL=80 and insert inline data using IEBGENER:
-
-**⚠️ Note:** Inline DD * data is padded to 80 bytes. Verify FD includes FILLER to match LRECL/RECORDSIZE.
-
-```JCL
-//STEP1   EXEC PGM=IEBGENER
-//SYSPRINT DD SYSOUT=*
-//SYSIN    DD DUMMY
-//SYSUT1   DD *
-YOUR DATA HERE
-/*
-//SYSUT2   DD DSN=YOUR.DATA.SET,
-//            DISP=(NEW,CATLG,DELETE),
-//            SPACE=(TRK,(1,1)),
-//            DCB=(RECFM=F,LRECL=80,BLKSIZE=80)
-```
-
-**Alternative:** Allocate PS file and insert exact length of your file transaction data using IEBGENER (see [JCL SAMPLES/DATA2PS.jcl](../../JCL%20SAMPLES/DATA2PS.jcl) for example)
+**Alternative:**
+1. Create PS file with LRECL=80 and insert inline data using IEBGENER:
+- **⚠️ Note:** Inline DD * data is padded to 80 bytes. Verify FD includes FILLER to match LRECL/RECORDSIZE.
+2. Allocate PS file and insert exact length of your file transaction data using IEBGENER (see [JCL SAMPLES/DATA2PS.jcl](../../JCL%20SAMPLES/DATA2PS.jcl) for example)
 
 ### Step 4: Execute Program
 
 **Submit:** [JCL/COMPRUN.jcl](JCL/COMPRUN.jcl)  
 **Check:** SYSOUT for statistics and FILE STATUS messages  
 **Review:** [ERROR-REPORT-OUTPUT](DATA/ERROR-REPORT-OUTPUT) for failed transactions
+
+**Alternative:**
+If you prefer to compile and run separately, use these jobs:  
+- [JCL SAMPLES/JCLCOMP.jcl](../../JCL%20SAMPLES/JCLCOMP.jcl)
+- [JCL SAMPLES/JCLRUN.jcl](../../JCL%20SAMPLES/JCLRUN.jcl)
 
 ### Step 5: Verify Results
 
