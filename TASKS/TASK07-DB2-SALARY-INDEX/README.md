@@ -18,14 +18,6 @@ Company performs annual salary indexing based on department policy. The system m
 
 #### 1. TB_EMP_SALARY (DB2 Table) - Employee Salary Master
 
-**Access Mode:** 
-- DB2 CURSOR (WITH HOLD, FOR UPDATE OF)
-**Table Structure:**
-- EMP_ID CHAR(5) NOT NULL PRIMARY KEY, 
-- NAME CHAR(15) NOT NULL,
-- DEPT_CODE CHAR(3) NOT NULL,
-- SALARY DECIMAL(7,2) NOT NULL
-
 **Sample Data:** [DATA/TB-EMP-SALARY-BEFORE](DATA/TB-EMP-SALARY-BEFORE)
 
 **DCLGEN Structure:** 
@@ -43,21 +35,7 @@ Company performs annual salary indexing based on department policy. The system m
 **Record Format:**
 - Fixed (RECFM=F, LRECL=80)
 
-**Report Format:**  
-
-**Header:**
-- EMPID   
-- OLD_SAL
-- NEW_SAL
-- STATUS
-  
-**Detail:**
-- EMP_ID (5) | OLD_SAL (10.2) | NEW_SAL (10.2) | STATUS (7)  
-    
-**Footer:** 
-- TOTAL: nnn RECORDS UPDATED
-
-**Expected Output:** [DATA/SALARY-REPORT-OUTPUT](DATA/SALARY-REPORT-OUTPUT)
+**Expected Output:** [DATA/SALARY-REPORT](DATA/SALARY-REPORT)
 
 #### 3. TB_EMP_SALARY (DB2 Table) - Updated Employee Data
 
@@ -159,11 +137,6 @@ Same table as input, updated in place with new salary values
 ### 1. [CREATE-TABLE.sql](SQL/CREATE-TABLE.sql) - Create Employee Table
 
 Creates TB_EMP_SALARY table with primary key on EMP_ID
-**Columns:**
-- EMP_ID CHAR(5)
-- NAME CHAR(15)
-- DEPT_CODE CHAR(3)
-- SALARY DECIMAL(7,2)
 
 ### 2. [INSERT-DATA.sql](SQL/INSERT-DATA.sql) - Load Initial Data
 
@@ -192,17 +165,18 @@ Coverage: IT=4, SAL=3, HR=2, FIN=1
 
 ### Step 3: Execute Salary Indexing Program
 
-**Submit** [JCL/COMPRUN.jcl](JCL/COMPRUN.jcl).   
+**Submit** [JCL/COBDB2CP.jcl](JCL/COBDB2CP.jcl).   
 **See** [OUTPUT/SYSOUT.txt](OUTPUT/SYSOUT.txt)  
 **Review** [DATA/SALARY-REPORT](DATA/SALARY-REPORT) for detailed report
 
 ### Step 4: Verify Results
 
 **Query updated table:**  
-SELECT EMP_ID, NAME, DEPT_CODE, SALARY FROM TB_EMP_SALARY ORDER BY EMP_ID.  
-**Compare** Before [DATA/TB-EMP-SALARY-BEFORE](DATA/TB-EMP-SALARY-BEFORE) vs After [DATA/TB-EMP-SALARY-AFTER](DATA/TB-EMP-SALARY-AFTER).  
-**Verify calculations** IT × 1.10, SAL × 1.05, OTHER × 1.03, cap at 100000.   
-**Check report** Header, 10 detail lines, STATUS (OK or MAXCAP), Footer with total count.
+
+- SELECT EMP_ID, NAME, DEPT_CODE, SALARY FROM TB_EMP_SALARY ORDER BY EMP_ID.  
+- **Compare** Before [DATA/TB-EMP-SALARY-BEFORE](DATA/TB-EMP-SALARY-BEFORE) vs After [DATA/TB-EMP-SALARY-AFTER](DATA/TB-EMP-SALARY-AFTER).  
+- **Verify calculations** IT × 1.10, SAL × 1.05, OTHER × 1.03, cap at 100000.   
+- **Check report** Header, 10 detail lines, STATUS (OK or MAXCAP), Footer with total count.
 
 ## Common Issues
 
