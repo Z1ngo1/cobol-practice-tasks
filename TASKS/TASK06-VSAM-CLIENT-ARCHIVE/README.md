@@ -164,7 +164,8 @@ Standard compile-link-go JCL using MYCOMPGO procedure.
 **Alternative:**  
 1. Define VSAM with RECORDSIZE(80,80) to match inline format
 - **⚠️ Note:** Inline DD * data is padded to 80 bytes. Verify FD includes FILLER to match LRECL/RECORDSIZE.
-2. Create temporary PS file with exact record length (34 bytes), load data there first, then REPRO to VSAM. Example in [JCL SAMPLES/DATAVSAM.jcl](../../JCL%20SAMPLES/DATAVSAM.jcl) uses SORT utility (can also be done with ICETOOL, IEBGENER)
+2. Create temporary PS file with exact record length (34 bytes), load data there first, then REPRO to VSAM.
+- Example in [JCL SAMPLES/DATAVSAM.jcl](../../JCL%20SAMPLES/DATAVSAM.jcl) uses SORT utility (can also be done with ICETOOL, IEBGENER)
 
 ### Step 3: Prepare Parameter File
 
