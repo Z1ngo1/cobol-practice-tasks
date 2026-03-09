@@ -145,7 +145,7 @@ Coverage: IT=4, SAL=3, HR=2, FIN=1
 
 ## JCL Jobs
 
-### 1. [COBDB2PC.jcl](JCL/COBDB2CP.jcl) - DB2 Precompile, Compile, Bind, and Execute
+### 1. [COBDB2CP.jcl](JCL/COBDB2CP.jcl) - DB2 Precompile, Compile, Bind, and Execute
 
 **Step 1:** Delete old DBRM (IEFBR14)  
 **Step 2:** DB2 Precompile, COBOL Compile, Link, and BIND PLAN - converts EXEC SQL to CALL statements  
