@@ -25,12 +25,6 @@ A company needs to archive and remove inactive client records from the master da
 **Key:**
 - CLIENT-ID (6 characters, positions 1-6)
 
-**Record Layout:**
-- 01  CLIENT-REC.
-  - 05  CLIENT-ID         PIC X(6).
-  - 05  CLIENT-NAME       PIC X(20).
-  - 05  CLIENT-LAST-DATE  PIC 9(8).  *> YYYYMMDD format
-
 **Sample Data:** [DATA/CLIENT-MASTER-BEFORE](DATA/CLIENT-MASTER-BEFORE)
 
 #### 2. PARAM-FILE (PS) - Cutoff Date Parameter
@@ -41,11 +35,6 @@ A company needs to archive and remove inactive client records from the master da
 - SEQUENTIAL
 **Record Format:**
 - Fixed (RECFM=F, LRECL=80)
-
-**Record Layout:**
-- 01  PARAM-REC.
-  - 05  PARAM-DATE  PIC X(8).   *> YYYYMMDD cutoff date
-  - 05  FILLER      PIC X(72).
 
 **Logic:** Records with CLIENT-LAST-DATE <= CUTOFF-DATE are considered inactive and archived
 
@@ -61,13 +50,6 @@ A company needs to archive and remove inactive client records from the master da
 - SEQUENTIAL
 **Record Format:**
 - Fixed (RECFM=F, LRECL=80)
-
-**Record Layout:**
-- 01  ARCH-REC.
-  - 05  ARCH-ID    PIC X(6).
-  - 05  ARCH-NAME  PIC X(20).
-  - 05  ARCH-DATE  PIC 9(8).
-  - 05  FILLER     PIC X(46).
 
 **Expected Output:** [DATA/ARCHIVE-OLD-OUTPUT](DATA/ARCHIVE-OLD-OUTPUT)
 
@@ -174,80 +156,37 @@ Standard compile-link-go JCL using MYCOMPGO procedure.
 
 ### Step 2: Load Master Data into VSAM
 
-**Option A: Use File Manager**
+**Use File Manager**
 1. Navigate to VSAM file in ISPF 
 2. Open with File Manager (FM)
 3. Insert records manually from [DATA/CLIENT-MASTER-BEFORE](DATA/CLIENT-MASTER-BEFORE)
 
-**Option B: Use REPRO with inline data**
-
-**⚠️ Note:** Inline DD * data is padded to 80 bytes. Verify FD includes FILLER to match LRECL/RECORDSIZE.
-
-```JCL
-//********************************************
-//* STEP 1: DEFINE VSAM CLUSTER              
-//********************************************
-//STEP10   EXEC PGM=IDCAMS                             
-//SYSPRINT DD SYSOUT=*                                 
-//SYSOUT   DD SYSOUT=*                                 
-//SYSIN    DD *                                        
-  DEFINE CLUSTER (NAME(YOUR.VSAM.CLUSTER) -
-           RECORDSIZE(80 80)               -           
-           TRACKS(1 1)                     -           
-           KEYS(20 0)                      -          
-           CISZ(4096)                      -           
-           FREESPACE(10 20)                -           
-           INDEXED)                                    
-/*
-//********************************************
-//* STEP 2: LOAD DATA INTO VSAM USING REPRO  
-//********************************************
-//STEP20   EXEC PGM=IDCAMS
-//SYSPRINT DD SYSOUT=*
-//SYSOUT   DD SYSOUT=*
-//INFILE   DD *
-YOUR DATA HERE
-/*
-//SYSIN    DD *
-  REPRO INFILE(INFILE) -
-        OUTDATASET(YOUR.VSAM.CLUSTER)
-/*
-```
-                              
-- Or Create temporary PS file with exact record length (34 bytes), load data there first, then REPRO to VSAM. Example in [JCL SAMPLES/DATAVSAM.jcl](../../JCL%20SAMPLES/DATAVSAM.jcl) uses SORT utility (can also be done with ICETOOL, IEBGENER)
+**Alternative:**  
+1. Define VSAM with RECORDSIZE(80,80) to match inline format
+- **⚠️ Note:** Inline DD * data is padded to 80 bytes. Verify FD includes FILLER to match LRECL/RECORDSIZE.
+2. Create temporary PS file with exact record length (34 bytes), load data there first, then REPRO to VSAM. Example in [JCL SAMPLES/DATAVSAM.jcl](../../JCL%20SAMPLES/DATAVSAM.jcl) uses SORT utility (can also be done with ICETOOL, IEBGENER)
 
 ### Step 3: Prepare Parameter File
 
-**Option A: Upload via ISPF 3.4**
+**Upload via ISPF 3.4**
 
-Upload  to PS dataset manually via ISPF
+- Upload  to PS dataset manually via ISPF
 
-**Option B: Create via JCL**
-
-Create PS file with LRECL=80 and insert inline data using IEBGENER:
-
-**⚠️ Note:** Inline DD * data is padded to 80 bytes. Verify FD includes FILLER to match LRECL/RECORDSIZE.
-
-```JCL
-//STEP1   EXEC PGM=IEBGENER
-//SYSPRINT DD SYSOUT=*
-//SYSIN    DD DUMMY
-//SYSUT1   DD *
-YOUR DATA HERE
-/*
-//SYSUT2   DD DSN=YOUR.DATA.SET,
-//            DISP=(NEW,CATLG,DELETE),
-//            SPACE=(TRK,(1,1)),
-//            DCB=(RECFM=F,LRECL=80,BLKSIZE=80)
-```
-
-**Alternative:** Allocate PS file and insert exact length of your file transaction data using IEBGENER (see [JCL SAMPLES/DATA2PS.jcl](../../JCL%20SAMPLES/DATA2PS.jcl) for example)
+**Alternative:**
+1. Create PS file with LRECL=80 and insert inline data using IEBGENER:
+- **⚠️ Note:** Inline DD * data is padded to 80 bytes. Verify FD includes FILLER to match LRECL/RECORDSIZE.
+2. Allocate PS file and insert exact length of your file transaction data using IEBGENER (see [JCL SAMPLES/DATA2PS.jcl](../../JCL%20SAMPLES/DATA2PS.jcl) for example)
 
 ### Step 4: Execute Program
 
 **Submit:** [JCL/COMPRUN.jcl](JCL/COMPRUN.jcl)  
 **Check:** SYSOUT for statistics and FILE STATUS messages (see [OUTPUT/SYSOUT.txt](OUTPUT/SYSOUT.txt))  
 **Review:** [DATA/ARCHIVE-OLD-OUTPUT](DATA/ARCHIVE-OLD-OUTPUT) for archived clients
+
+**Alternative:**
+If you prefer to compile and run separately, use these jobs:  
+- [JCL SAMPLES/JCLCOMP.jcl](../../JCL%20SAMPLES/JCLCOMP.jcl)
+- [JCL SAMPLES/JCLRUN.jcl](../../JCL%20SAMPLES/JCLRUN.jcl)
 
 ### Step 5: Verify Results
 
