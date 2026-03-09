@@ -260,27 +260,27 @@ YOUR DATA HERE
 
 ### Issue 1: FILE STATUS '92' on DELETE
 
-**Cause:** File opened in INPUT mode instead of I-O, or wrong access mode (not DYNAMIC)
+**Cause:** File opened in INPUT mode instead of I-O, or wrong access mode (not DYNAMIC)  
 **Solution:** Verify SELECT statement uses ACCESS MODE IS DYNAMIC and OPEN I-O
 
 ### Issue 2: All records deleted or none deleted
 
-**Cause:** Wrong date comparison logic or CUTOFF-DATE format mismatch
+**Cause:** Wrong date comparison logic or CUTOFF-DATE format mismatch  
 **Solution:** Verify YYYYMMDD format in PARAM-FILE, check <= vs < logic, verify WS-CUTOFF-DATE displays correctly
 
 ### Issue 3: ERROR: PARAM FILE IS EMPTY OR UNREADABLE
 
-**Cause:** PARAM-FILE not allocated or empty
+**Cause:** PARAM-FILE not allocated or empty  
 **Solution:** Create PARAM-FILE with cutoff date, verify LRECL=80, ensure first 8 bytes contain valid date
 
 ### Issue 4: START FAILED STATUS
 
-**Cause:** VSAM file empty or not opened correctly
+**Cause:** VSAM file empty or not opened correctly  
 **Solution:** Verify VSAM file contains data, check OPEN I-O succeeded (CLIENT-STATUS = '00')
 
 ### Issue 5: Records archived but not deleted
 
-**Cause:** DELETE statement failed silently
+**Cause:** DELETE statement failed silently  
 **Solution:** Check FILE STATUS after DELETE, verify CLIENT-STATUS = '00', review SYSOUT for error messages
 
 ## Program Output (SYSOUT)
