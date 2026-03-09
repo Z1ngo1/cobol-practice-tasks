@@ -223,22 +223,22 @@ Compare updated VSAM file content with expected results in [DATA/ACCT-MASTER-AFT
 
 ### Issue 1: FILE STATUS '92' or '93'
 
-**Cause:** VSAM file not defined or damaged
+**Cause:** VSAM file not defined or damaged  
 **Solution:** Re-run DEFKSDS.jcl
 
 ### Issue 2: FILE STATUS '23' for all transactions
 
-**Cause:** Master file is empty or wrong key field
+**Cause:** Master file is empty or wrong key field  
 **Solution:** Verify data loaded correctly, check key offset
 
 ### Issue 3: Abend S0C7 (Data Exception)
 
-**Cause:** Non-numeric data in ACCT-BALANCE or TRANS-AMOUNT
+**Cause:** Non-numeric data in ACCT-BALANCE or TRANS-AMOUNT  
 **Solution:** Verify input data format (no spaces in numeric fields)
 
 ### Issue 4: Wrong final balances
 
-**Cause:** Transaction file processed out of order
+**Cause:** Transaction file processed out of order  
 **Solution:** Verify transaction sequence in input file
 
 ## Notes
