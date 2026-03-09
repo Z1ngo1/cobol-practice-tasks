@@ -11,7 +11,7 @@
   GENERATE MAXFLDS=1                                                   
   RECORD FIELD=(32,1,,1)                                               
 //SYSUT1   DD *                                                        
-1234567890QWERTYUIOPCVASDFGHJKLZ                                       
+YOUR DATA                                      
 /*                                                                     
 //SYSUT2   DD DSN=YOUR.DATA.SET,                                      
 //            DISP=(NEW,CATLG,DELETE),                                 
