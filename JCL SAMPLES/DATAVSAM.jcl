@@ -26,7 +26,7 @@
 //STEP2    EXEC PGM=SORT,COND=(0,NE)
 //SYSOUT   DD SYSOUT=*
 //SORTIN   DD *
-1234567890QWERTYUIOPCVASDFGHJKLZ                                       
+YOUR DATA                                       
 /*                                                                     
 //SORTOUT  DD DSN=&&TEMP,
 //            DISP=(NEW,PASS,DELETE),
