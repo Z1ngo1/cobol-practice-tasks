@@ -24,7 +24,7 @@ A bank needs to process daily transactions (deposits and withdrawals) against cu
 **Key:**
 - ACCT-NUM (5 characters, positions 1-5)
 
-**Sample Data:** [DATA/ACCT-MASTER-BEFORE](DATA/ACCT-MASTER-BEFORE)
+**Sample Data:** [DATA/ACCT.MASTER.BEFORE](DATA/ACCT.MASTER.BEFORE)
 
 #### 2. TRANS-FILE (PS) - Transaction File
 
@@ -32,7 +32,7 @@ A bank needs to process daily transactions (deposits and withdrawals) against cu
 - **Organization:** SEQUENTIAL
 - **Record Format:** Fixed (RECFM=FB, LRECL=13)
 
-**Sample Data:** [DATA/TRANS-FILE-INPUT](DATA/TRANS-FILE-INPUT)
+**Sample Data:** [DATA/TRANS.FILE.INPUT](DATA/TRANS.FILE.INPUT)
 
 ### Output Files
 
@@ -47,13 +47,13 @@ A bank needs to process daily transactions (deposits and withdrawals) against cu
 - INSUFFICIENT FUNDS - Withdrawal amount exceeds current balance
 - OVERFLOW - Balance exceeds maximum limit (999999.99)
 
-**Expected Output:** [DATA/ERROR-REPORT-OUTPUT](DATA/ERROR-REPORT-OUTPUT)
+**Expected Output:** [DATA/ERROR.REPORT.OUTPUT](DATA/ERROR.REPORT.OUTPUT)
 
 #### 4. ACCT.MASTER (VSAM KSDS) - Updated Master File
 
 Updated balances after successful transactions.
 
-**Expected Final State:** [DATA/ACCT-MASTER-AFTER](DATA/ACCT-MASTER-AFTER)
+**Expected Final State:** [DATA/ACCT.MASTER.AFTER](DATA/ACCT.MASTER.AFTER)
 
 ### Error Handling
 
@@ -128,7 +128,7 @@ Standard compile-link-go JCL using MYCOMPGO procedure.
 **Use File Manager**
 1. Navigate to VSAM file in ISPF 
 2. Open with File Manager (FM)
-3. Insert records manually from [DATA/ACCT-MASTER-BEFORE](DATA/ACCT-MASTER-BEFORE)
+3. Insert records manually from [DATA/ACCT.MASTER.BEFORE](DATA/ACCT.MASTER.BEFORE)
 
 **Alternative:**
 1. Define VSAM with RECORDSIZE(80,80) to match inline format
@@ -140,7 +140,7 @@ Standard compile-link-go JCL using MYCOMPGO procedure.
 
 **Manual upload**
 
-Upload [DATA/TRANS-FILE-INPUT](DATA/TRANS-FILE-INPUT) to PS dataset manually via ISPF
+Upload [DATA/TRANS.FILE.INPUT](DATA/TRANS.FILE.INPUT) to PS dataset manually via ISPF
 
 **Alternative:**
 1. Create PS file with LRECL=80 and insert inline data using IEBGENER:
@@ -151,7 +151,7 @@ Upload [DATA/TRANS-FILE-INPUT](DATA/TRANS-FILE-INPUT) to PS dataset manually via
 
 **Submit:** [JCL/COMPRUN.jcl](JCL/COMPRUN.jcl)  
 **Check:** SYSOUT for statistics and FILE STATUS messages  
-**Review:** [ERROR-REPORT-OUTPUT](DATA/ERROR-REPORT-OUTPUT) for failed transactions
+**Review:** [ERROR.REPORT.OUTPUT](DATA/ERROR.REPORT.OUTPUT) for failed transactions
 
 **Alternative:**
 If you prefer to compile and run separately, use these jobs:  
@@ -160,7 +160,7 @@ If you prefer to compile and run separately, use these jobs:
 
 ### Step 5: Verify Results
 
-Compare updated VSAM file content with expected results in [DATA/ACCT-MASTER-AFTER](DATA/ACCT-MASTER-AFTER)
+Compare updated VSAM file content with expected results in [DATA/ACCT.MASTER.AFTER](DATA/ACCT.MASTER.AFTER)
 
 ## Common Issues
 
