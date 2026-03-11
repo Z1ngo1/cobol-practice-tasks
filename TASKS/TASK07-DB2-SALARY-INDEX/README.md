@@ -130,7 +130,7 @@ Same table as input, updated in place with new salary values
 - Closes SALARY-REPORT-FILE
 - Validates OUT-STATUS = '00'
 - Displays "SALARY INDEXING COMPLETED: {count}"
-- Stops execution with proper return code
+- STOP RUN
   
 ## SQL Scripts
 
@@ -199,7 +199,7 @@ Verification: SELECT NAME FROM SYSIBM.SYSPLAN WHERE NAME = 'DB2TASK7'.
 ### Issue 4: Report File Not Allocated
 
 **Cause:** OUTDD DD statement missing or incorrect DSN.  
-**Solution:** Verify COMPRUN.jcl RUN step includes OUTDD DD statement, check DSN exists after execution, review SYSOUT for error messages.
+**Solution:** Verify COBDB2CP.jcl RUN step includes OUTDD DD statement, check DSN exists after execution, review SYSOUT for error messages.
 
 ### Issue 5: Intermediate Commit Not Triggered
 
