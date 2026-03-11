@@ -105,12 +105,10 @@ Same table as input, updated in place with new bonus values
 - Validates OUT-STATUS = '00'
 - Writes report header line
 - Initializes counters (TOTAL-REC-UPDATED = 0, COMMIT-COUNT = 0)
-
-2. **Open DB2 Cursor:**
 - Executes OPEN CUR-BONUS
 - Validates SQLCODE = 0
 
-3. **Fetch and Process Loop**
+2. **Fetch and Process Loop**
 - Performs FETCH NEXT until SQLCODE = 100 (EOF)
 - For each employee record fetched:
   - Saves OLD-BONUS
@@ -136,18 +134,14 @@ Same table as input, updated in place with new bonus values
     - Displays "COMMIT AFTER {count} RECORDS"
     - Resets COMMIT-COUNT to 0
 
-4. **Final Commit and Close**
-- Executes COMMIT WORK
-- Validates SQLCODE = 0
-- Executes CLOSE CUR-BONUS
-- Validates SQLCODE = 0 or -501
-
-5. **Termination**
+3. **Termination**
+- Executes final COMMIT WORK, validates SQLCODE = 0
+- Closes CUR-BONUS cursor (handles SQLCODE -501 gracefully)
 - Writes report footer: "TOTAL: nnn ROWS UPDATED"
 - Closes BONUS-REPORT-FILE
 - Validates OUT-STATUS = '00'
 - Displays "BONUS UPDATE COMPLETED: {count}"
-- Stops execution with proper return code
+- STOP RUN
 
 ## SQL Scripts
 
