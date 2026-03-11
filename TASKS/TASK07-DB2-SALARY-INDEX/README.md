@@ -18,11 +18,11 @@ Company performs annual salary indexing based on department policy. The system m
 
 #### 1. TB_EMP_SALARY (DB2 Table) - Employee Salary Master
 
-**Sample Data:** [DATA/TB-EMP-SALARY-BEFORE](DATA/TB-EMP-SALARY-BEFORE)
+**Sample Data:** [DATA/TB.EMP.SALARY.BEFORE](DATA/TB.EMP.SALARY.BEFORE)
 
 **DCLGEN Structure:** 
 
-**Sample Data:** [DCLGEN/TASK7.cbl](DCLGEN/TASK7.cbl)
+**Sample Data:** [DCLGEN/TASK7.cpy](DCLGEN/TASK7.cpy)
 
 ### Output Files
 
@@ -35,13 +35,13 @@ Company performs annual salary indexing based on department policy. The system m
 **Record Format:**
 - Fixed (RECFM=F, LRECL=80)
 
-**Expected Output:** [DATA/SALARY-REPORT](DATA/SALARY-REPORT)
+**Expected Output:** [DATA/SALARY.REPORT](DATA/SALARY.REPORT)
 
 #### 3. TB_EMP_SALARY (DB2 Table) - Updated Employee Data
 
 Same table as input, updated in place with new salary values
 
-**Expected Final State:** [DATA/TB-EMP-SALARY-AFTER](DATA/TB-EMP-SALARY-AFTER)
+**Expected Final State:** [DATA/TB.EMP.SALARY.AFTER](DATA/TB.EMP.SALARY.AFTER)
 
 ### Salary Indexing Logic
 
@@ -134,11 +134,11 @@ Same table as input, updated in place with new salary values
   
 ## SQL Scripts
 
-### 1. [CREATE-TABLE.sql](SQL/CREATE-TABLE.sql) - Create Employee Table
+### 1. [CREATE.TABLE.sql](SQL/CREATE.TABLE.sql) - Create Employee Table
 
 Creates TB_EMP_SALARY table with primary key on EMP_ID
 
-### 2. [INSERT-DATA.sql](SQL/INSERT-DATA.sql) - Load Initial Data
+### 2. [INSERT.DATA.sql](SQL/INSERT.DATA.sql) - Load Initial Data
 
 Inserts 10 employee records with varying departments and salaries 
 Coverage: IT=4, SAL=3, HR=2, FIN=1
@@ -156,25 +156,25 @@ Coverage: IT=4, SAL=3, HR=2, FIN=1
 
 ### Step 1: Create DB2 Table
 
-**Execute** [SQL/CREATE-TABLE.sql](SQL/CREATE-TABLE.sql) via SPUFI or QMF
+**Execute** [SQL/CREATE.TABLE.sql](SQL/CREATE.TABLE.sql) via SPUFI or QMF
 
 ### Step 2: Load Initial Employee Data
 
-**Execute** [SQL/INSERT-DATA.sql](SQL/INSERT-DATA.sql) via SPUFI or QMF  
-**See** [DATA/TB-EMP-SALARY-BEFORE](DATA/TB-EMP-SALARY-BEFORE).
+**Execute** [SQL/INSERT.DATA.sql](SQL/INSERT.DATA.sql) via SPUFI or QMF  
+**See** [DATA/TB.EMP.SALARY.BEFORE](DATA/TB.EMP.SALARY.BEFORE).
 
 ### Step 3: Execute Salary Indexing Program
 
 **Submit** [JCL/COBDB2CP.jcl](JCL/COBDB2CP.jcl).   
 **See** [OUTPUT/SYSOUT.txt](OUTPUT/SYSOUT.txt)  
-**Review** [DATA/SALARY-REPORT](DATA/SALARY-REPORT) for detailed report
+**Review** [DATA/SALARY.REPORT](DATA/SALARY.REPORT) for detailed report
 
 ### Step 4: Verify Results
 
 **Query updated table:**  
 
 - SELECT EMP_ID, NAME, DEPT_CODE, SALARY FROM TB_EMP_SALARY ORDER BY EMP_ID.  
-- **Compare** Before [DATA/TB-EMP-SALARY-BEFORE](DATA/TB-EMP-SALARY-BEFORE) vs After [DATA/TB-EMP-SALARY-AFTER](DATA/TB-EMP-SALARY-AFTER).  
+- **Compare** Before [DATA/TB.EMP.SALARY.BEFORE](DATA/TB.EMP.SALARY.BEFORE) vs After [DATA/TB.EMP.SALARY.AFTER](DATA/TB.EMP.SALARY.AFTER).  
 - **Verify calculations** IT × 1.10, SAL × 1.05, OTHER × 1.03, cap at 100000.   
 - **Check report** Header, 10 detail lines, STATUS (OK or MAXCAP), Footer with total count.
 
