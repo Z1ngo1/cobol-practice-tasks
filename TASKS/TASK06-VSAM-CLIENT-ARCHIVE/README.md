@@ -38,7 +38,7 @@ A company needs to archive and remove inactive client records from the master da
 
 **Logic:** Records with CLIENT-LAST-DATE <= CUTOFF-DATE are considered inactive and archived
 
-**Sample Data:** [DATA/PARAM.FILE](DATA/PARAM.FILE.INPUT)
+**Sample Data:** [DATA/PARAM.FILE.INPUT](DATA/PARAM.FILE.INPUT)
 
 ### Output Files
 
@@ -123,7 +123,6 @@ Active clients remaining after deletion of archived records.
      - RECORDS READ: total records processed
      - RECORDS DELETE: clients archived and removed
      - RECORDS KEPT: active clients remaining
-   - Verifies equation: REC-READ = REC-DELETE + REC-KEPT
    - Stops execution with proper return code
 
 ## JCL Jobs
@@ -171,7 +170,7 @@ Standard compile-link-go JCL using MYCOMPGO procedure.
 
 **Upload via ISPF 3.4**
 
-- Upload  to PS dataset manually via ISPF
+- Upload [DATA/PARAM.FILE.INPUT](DATA/PARAM.FILE.INPUT) to PS dataset manually via ISPF
 
 **Alternative:**
 1. Create PS file with LRECL=80 and insert inline data using IEBGENER:
