@@ -25,7 +25,7 @@ A company needs to archive and remove inactive client records from the master da
 **Key:**
 - CLIENT-ID (6 characters, positions 1-6)
 
-**Sample Data:** [DATA/CLIENT-MASTER-BEFORE](DATA/CLIENT-MASTER-BEFORE)
+**Sample Data:** [DATA/CLIENT.MASTER.BEFORE](DATA/CLIENT.MASTER.BEFORE)
 
 #### 2. PARAM-FILE (PS) - Cutoff Date Parameter
 
@@ -38,7 +38,7 @@ A company needs to archive and remove inactive client records from the master da
 
 **Logic:** Records with CLIENT-LAST-DATE <= CUTOFF-DATE are considered inactive and archived
 
-**Sample Data:** [DATA/PARAM-FILE](DATA/PARAM-FILE-INPUT)
+**Sample Data:** [DATA/PARAM.FILE](DATA/PARAM.FILE.INPUT)
 
 ### Output Files
 
@@ -51,13 +51,13 @@ A company needs to archive and remove inactive client records from the master da
 **Record Format:**
 - Fixed (RECFM=F, LRECL=80)
 
-**Expected Output:** [DATA/ARCHIVE-OLD-OUTPUT](DATA/ARCHIVE-OLD-OUTPUT)
+**Expected Output:** [DATA/ARCHIVE.OLD.OUTPUT](DATA/ARCHIVE.OLD.OUTPUT)
 
 #### 4. CLIENT-FILE (VSAM KSDS) - Updated Master File
 
 Active clients remaining after deletion of archived records.
 
-**Expected Final State:** [DATA/CLIENT-MASTER-AFTER](DATA/CLIENT-MASTER-AFTER)
+**Expected Final State:** [DATA/CLIENT.MASTER.AFTER](DATA/CLIENT.MASTER.AFTER)
 
 ### Cutoff Date Logic
 
@@ -159,7 +159,7 @@ Standard compile-link-go JCL using MYCOMPGO procedure.
 **Use File Manager**
 1. Navigate to VSAM file in ISPF 
 2. Open with File Manager (FM)
-3. Insert records manually from [DATA/CLIENT-MASTER-BEFORE](DATA/CLIENT-MASTER-BEFORE)
+3. Insert records manually from [DATA/CLIENT.MASTER.BEFORE](DATA/CLIENT.MASTER.BEFORE)
 
 **Alternative:**  
 1. Define VSAM with RECORDSIZE(80,80) to match inline format
@@ -182,7 +182,7 @@ Standard compile-link-go JCL using MYCOMPGO procedure.
 
 **Submit:** [JCL/COMPRUN.jcl](JCL/COMPRUN.jcl)  
 **Check:** SYSOUT for statistics and FILE STATUS messages (see [OUTPUT/SYSOUT.txt](OUTPUT/SYSOUT.txt))  
-**Review:** [DATA/ARCHIVE-OLD-OUTPUT](DATA/ARCHIVE-OLD-OUTPUT) for archived clients
+**Review:** [DATA/ARCHIVE.OLD.OUTPUT](DATA/ARCHIVE.OLD.OUTPUT) for archived clients
 
 **Alternative:**
 If you prefer to compile and run separately, use these jobs:  
