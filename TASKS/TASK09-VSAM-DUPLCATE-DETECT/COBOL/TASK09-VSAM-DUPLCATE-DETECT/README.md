@@ -53,7 +53,7 @@ Company performs periodic data quality checks on the client master database. The
 **Record Format:**
 - Fixed Block (RECFM=FB, LRECL=80)
 
-**Expected Output:** [DATA/DUPLICATE-REPORT](DATA/DUPLICATE-REPORT)
+**Expected Output:** [DATA/DUPLCT.REPORT](DATA/DUPLCT.REPORT)
 
 ### Duplicate Detection Logic
 
@@ -75,10 +75,10 @@ Company performs periodic data quality checks on the client master database. The
 - No header line in report (detail lines only)
 
 **Examples:**
-- IVANOV IVAN, 19991201: IDs 000101, 000102, 000103 → 3 records (duplicate group)
+- IVANOV IVAN, 19991201: IDs 000101, 000103, 000109 → 3 records (duplicate group)
 - PETROV PAVEL, 19880520: ID 000104 only → 1 record (unique, not written)
-- SMIRNOVA MARIA, 20010415: IDs 000105, 000106 → 2 records (duplicate group)
-- POPOVA ANNA, 19870305: IDs 000108, 000109, 000110 → 3 records (duplicate group)
+- SMIRNOVA MARIA, 20010415: IDs 000105, 000108 → 2 records (duplicate group)
+- POPOVA ANNA, 19870305: IDs 000102, 000106, 000110 → 3 records (duplicate group)
 
 **Statistics:**
 - TOTAL RECORDS PROCESSED: total count of all records read
@@ -110,6 +110,7 @@ Company performs periodic data quality checks on the client master database. The
 3. **Output Procedure: PRCSS-SORT-REC**
    - RETURN first sorted record from CLIENT-SORT-WORK
    - Sets WS-CUR-NAME and WS-CUR-BIRTH as current group key
+   - Increments TOTAL-REC 
    - Performs ADD-TO-GROUP-BUFFER
    - Loop UNTIL EOF:
      - RETURN next sorted record
@@ -148,29 +149,110 @@ Company performs periodic data quality checks on the client master database. The
 
 ## JCL Jobs
 
-### 1. [IDCAMS-VSAM.jcl](JCL/IDCAMS-VSAM.jcl) - Define VSAM KSDS Cluster
+### 1. [DEFKSDS.jcl](JCL/DEFKSDS.jcl) - Define VSAM KSDS Cluster
 
-**Step 1:** Delete old VSAM cluster (IDCAMS DELETE with SET MAXCC=0)
-**Step 2:** Define new VSAM KSDS cluster (IDCAMS DEFINE CLUSTER):
-- NAME: Z73460.TASK9.CLIENT.MAST.VSAM
-- RECORDSIZE(74,74), TRACKS(15), KEYS(6,0)
-- CISZ(4096), FREESPACE(10,20), INDEXED
+Defines KSDS cluster for client master file.
+
+**Key Parameters:**
+- RECORDSIZE(74,74) - Fixed 74-byte records
+- KEYS(6,0) 6-byte key starting at position 0
+- INDEXED - KSDS organization
 
 ### 2. [COMPRUN.jcl](JCL/COMPRUN.jcl) - Compile and Run
 
-**Step 1:** Delete old DUPLICATE-REPORT file (IEFBR14)
-**Step 2:** Compile and run VSAMJOB9 using MYCOMPGO proc (MEMBER=VSAMJOB9):
-- VSAMDD: Z73460.TASK9.CLIENT.MAST.VSAM (DISP=SHR) — input KSDS
-- SRTDD: Z73460.TASK9.SORTWORK (NEW,DELETE,DELETE, SPACE=CYL(2,2)) — sort work
-- REPDD: Z73460.TASK9.DUPLCT.REPORT (NEW,CATLG,DELETE, FB,LRECL=80) — output report
+Standard compile-link-go JCL using MYCOMPGO procedure.
+
+- VSAMDD - CLIENT.MAST.VSAM (VSAM KSDS)
+- SRTDD - SORTWORK (sort work)
+- REPDD - DUPLCT.REPORT (output report)
 
 ## How to Run
 
 ### Step 1: Define VSAM Cluster
 
-**Submit** [JCL/IDCAMS-VSAM.jcl](JCL/IDCAMS-VSAM.jcl)
-**Verify:** IDCAMS step completes with RC=0, cluster defined in catalog
+**Submit** [JCL/DEFKSDS.jcl](JCL/DEFKSDS.jcl)
+**Verify:** Check for MAXCC=0 in job output
 
-### Step 2: Load Client Master Data
+### Step 2: Load Master Data into VSAM
 
-Load [DATA/CLIENT-MAST-VSAM-INPUT](DATA/CLIENT-MAST-VSAM-INPUT) into VSAM KSDS via REPRO or custom load program:
+**Use File Manager**
+1. Navigate to VSAM file in ISPF 
+2. Open with File Manager (FM)
+3. Insert records manually from [DATA/CLIENT.MAST.VSAM](DATA/CLIENT.MAST.VSAM)
+
+**Alternative:**  
+1. Define VSAM with RECORDSIZE(80,80) to match inline format
+- **⚠️ Note:** Inline DD * data is padded to 80 bytes. Verify FD includes FILLER to match LRECL/RECORDSIZE.
+2. Create temporary PS file with exact record length (74 bytes), load data there first, then REPRO to VSAM.
+- Example in [JCL SAMPLES/DATAVSAM.jcl](../../JCL%20SAMPLES/DATAVSAM.jcl) uses SORT utility (can also be done with ICETOOL, IEBGENER)
+
+### Step 3: Execute Program
+
+**Submit:** [JCL/COMPRUN.jcl](JCL/COMPRUN.jcl)  
+**Check:** SYSOUT for statistics and FILE STATUS messages (see [OUTPUT/SYSOUT.txt](OUTPUT/SYSOUT.txt))  
+**Review:** [DATA/DUPLCT.REPORT](DATA/DUPLCT.REPORT) for detected duplicates
+
+**Alternative:**
+If you prefer to compile and run separately, use these jobs:  
+- [JCL SAMPLES/JCLCOMP.jcl](../../JCL%20SAMPLES/JCLCOMP.jcl)
+- [JCL SAMPLES/JCLRUN.jcl](../../JCL%20SAMPLES/JCLRUN.jcl)
+
+### Step 4: Verify Results
+
+- **Count report lines:** Should match SUSPICIOUS RECORDS FOUND in SYSOUT
+- **Verify groups:** IVANOV IVAN (3 records), SMIRNOVA MARIA (2 records), POPOVA ANNA (3 records)
+- **Check unique records not in report:** PETROV PAVEL (000104), KOZLOV DMITRY (000107)
+- **Confirm summary:** TOTAL RECORDS=10, GROUPS=3, SUSPICIOUS=8
+
+## Common Issues
+
+### Issue 1: FILE STATUS '92' or '93' on VSAM Open
+
+**Cause:** VSAM KSDS not defined, damaged, or cluster definition missing  
+**Solution:** Re-run JCL/DEFKSDS.jcl to redefine cluster  
+Verification: LISTCAT ENTRY(Z73460.TASK9.CLIENT.MAST.VSAM) ALL
+
+### Issue 2: FILE STATUS '23' During SORT Input Phase
+
+**Cause:** VSAM master file is empty or wrong key field offset  
+**Solution:** Verify data loaded correctly via REPRO, check KEYS(6,0) matches MAST-ID PIC X(6) at offset 0  
+Confirm LISTCAT shows non-zero REC-TOTAL for the cluster
+
+### Issue 3: Abend S0C7 (Data Exception)
+
+**Cause:** Non-numeric or corrupted data in MAST-BIRTH field used during sort key comparison  
+**Solution:** Verify MAST-BIRTH is exactly 8 bytes in YYYYMMDD format with no spaces or special characters  
+Check INPUT-VSAM data file for malformed records
+
+### Issue 4: Empty Report File (No Duplicates Detected)
+
+**Cause:** VSAM records not matching on NAME+BIRTH key due to wrong layout or trailing spaces mismatch  
+**Solution:** Verify VSAM records have correct layout — MAST-NAME starts at offset 7 (length 30), MAST-BIRTH at offset 37 (length 8)  
+Check that INPUT-VSAM data was loaded with correct LRECL=74
+
+### Issue 5: Wrong Record Count in Summary
+
+**Cause:** TOTAL-REC counter not incrementing for the very first record (before main loop starts)  
+**Solution:** Verify PRCSS-SORT-REC increments TOTAL-REC before the first ADD-TO-GROUP-BUFFER call and again inside the UNTIL EOF loop  
+Expected for 10-record test: TOTAL RECORDS PROCESSED = 10
+
+### Issue 6: Group Buffer Overflow Warning
+
+**Cause:** More than 50 records share the same NAME+BIRTH key (production data scenario)  
+**Solution:** For test data (max 3 per group) this should not occur  
+For production data increase buffer size: WS-GROUP-TABLE OCCURS 50 TIMES → OCCURS 200 TIMES
+
+## Program Output (SYSOUT)
+
+Expected execution log - see [OUTPUT/SYSOUT.txt](OUTPUT/SYSOUT.txt) for full output example.
+
+## Notes
+
+- Program uses COBOL SORT verb with OUTPUT PROCEDURE for in-memory group detection
+- GROUP BUFFER (OCCURS 50 TIMES) holds entire group before deciding to write or skip
+- Duplicate key is composite: NAME (30 chars) + BIRTHDATE (8 chars)
+- Sort tertiary key SRT-ID ensures stable ordering within duplicate groups
+- Unique records (group size = 1) are silently skipped, not written to report
+- VSAM KSDS accessed in SEQUENTIAL mode for full-file sort input
+- Sort work file (SRTDD) is temporary (NEW,DELETE,DELETE), recreated each run
+- Tested on IBM z/OS with Enterprise COBOL
