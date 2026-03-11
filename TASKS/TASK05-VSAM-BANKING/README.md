@@ -9,7 +9,6 @@ A bank needs to process daily transactions (deposits and withdrawals) against cu
 - Validate account existence before processing
 - Check for sufficient funds on withdrawals
 - Generate error report for failed transactions
-- Handle numeric overflow conditions
 
 ## Files
 
@@ -30,7 +29,7 @@ A bank needs to process daily transactions (deposits and withdrawals) against cu
 
 - **Access Mode:** INPUT (Sequential)
 - **Organization:** SEQUENTIAL
-- **Record Format:** Fixed (RECFM=FB, LRECL=13)
+- **Record Format:** Fixed (RECFM=FB, LRECL=80)
 
 **Sample Data:** [DATA/TRANS.FILE.INPUT](DATA/TRANS.FILE.INPUT)
 
@@ -40,12 +39,11 @@ A bank needs to process daily transactions (deposits and withdrawals) against cu
 
 - **Access Mode:** OUTPUT (Sequential)
 - **Organization:** SEQUENTIAL
-- **Record Format:** Variable (RECFM=VB, LRECL=84)
+- **Record Format:** FIXED (RECFM=FB, LRECL=80)
 
 **Error Types:**
 - ACCOUNT NOT FOUND - Account number doesn't exist in master file
 - INSUFFICIENT FUNDS - Withdrawal amount exceeds current balance
-- OVERFLOW - Balance exceeds maximum limit (999999.99)
 
 **Expected Output:** [DATA/ERROR.REPORT.OUTPUT](DATA/ERROR.REPORT.OUTPUT)
 
@@ -68,7 +66,6 @@ Updated balances after successful transactions.
    - Opens ACCT.MASTER (VSAM KSDS) in I-O mode for random access
    - Opens TRANS-FILE (PS) for sequential input
    - Opens ERROR-REPORT (PS) for sequential output
-   - Initializes counters for statistics tracking
 
 2. **Transaction Processing Loop**
    - Reads transaction records sequentially from TRANS-FILE
@@ -77,7 +74,6 @@ Updated balances after successful transactions.
      - If account found (FILE STATUS '00'):
        - **Deposit (TRANS-TYPE = 'D')**: 
          - Adds TRANS-AMOUNT to ACCT-BALANCE
-         - Checks for numeric overflow (balance > 999999.99)
          - Rewrites updated record to VSAM
        - **Withdrawal (TRANS-TYPE = 'W')**: 
          - Validates sufficient funds (ACCT-BALANCE >= TRANS-AMOUNT)
@@ -89,10 +85,6 @@ Updated balances after successful transactions.
 
 3. **Termination**
    - Closes all files (VSAM, TRANS-FILE, ERROR-REPORT)
-   - Displays processing statistics:
-     - Total transactions processed
-     - Successful updates
-     - Total errors (account not found + insufficient funds + overflow)
    - Validates FILE STATUS after every file operation
 
 ## JCL Jobs
@@ -112,9 +104,9 @@ Defines KSDS cluster for account master file.
 Standard compile-link-go JCL using MYCOMPGO procedure.
 
 **DD Statements:**
-- VSAM-DD - ACCT.MASTER (VSAM KSDS)
-- TRANS-DD - TRANS-FILE (PS)
-- ERROR-DD - ERROR-REPORT (PS)
+- EMPDD - ACCT.MASTER (VSAM KSDS)
+- INDD - TRANS-FILE (PS)
+- REPDD - ERROR-REPORT (PS)
 
 ## How to Run
 
@@ -150,7 +142,7 @@ Upload [DATA/TRANS.FILE.INPUT](DATA/TRANS.FILE.INPUT) to PS dataset manually via
 ### Step 4: Execute Program
 
 **Submit:** [JCL/COMPRUN.jcl](JCL/COMPRUN.jcl)  
-**Check:** SYSOUT for statistics and FILE STATUS messages  
+**Check:** SYSOUT for FILE STATUS messages  
 **Review:** [ERROR.REPORT.OUTPUT](DATA/ERROR.REPORT.OUTPUT) for failed transactions
 
 **Alternative:**
@@ -189,5 +181,4 @@ Compare updated VSAM file content with expected results in [DATA/ACCT.MASTER.AFT
 - Program uses random access mode for VSAM (not sequential)
 - Each transaction is independent - one failure doesn't affect others
 - VSAM file remains open throughout processing for performance
-- Error report uses variable-length records to accommodate long messages
 - Tested on IBM z/OS with Enterprise COBOL
