@@ -19,7 +19,7 @@ Company performs annual sales bonus calculation based on region and sales perfor
 
 #### 1. TB_SALES_BONUS (DB2 Table) - Sales Bonus Master
 
-**Sample Data:** [DATA/TB-SALES-BONUS-BEFORE](DATA/TB-SALES-BONUS-BEFORE)
+**Sample Data:** [DATA/TB.SALES.BONUS.BEFORE](DATA/TB.SALES.BONUS.BEFORE)
 
 **DCLGEN Structure:** [DCLGEN/TASK8.cpy](DCLGEN/TASK8.cpy)
 
@@ -36,13 +36,13 @@ Company performs annual sales bonus calculation based on region and sales perfor
 **Record Format:**
 - Fixed (RECFM=F, LRECL=80)
 
-**Expected Output:** [DATA/BONUS-REPORT](DATA/BONUS-REPORT)
+**Expected Output:** [DATA/BONUS.REPORT](DATA/BONUS.REPORT)
 
 #### 3. TB_SALES_BONUS (DB2 Table) - Updated Employee Data
 
 Same table as input, updated in place with new bonus values
 
-**Expected Final State:** [DATA/TB-SALES-BONUS-AFTER](DATA/TB-SALES-BONUS-AFTER)
+**Expected Final State:** [DATA/TB.SALES.BONUS.AFTER](DATA/TB.SALES.BONUS.AFTER)
 
 ### Bonus Calculation Logic
 
@@ -151,11 +151,11 @@ Same table as input, updated in place with new bonus values
 
 ## SQL Scripts
 
-### 1. [CREATE-TABLE.sql](SQL/CREATE-TABLE.sql) - Create Sales Bonus Table
+### 1. [CREATE.TABLE.sql](SQL/CREATE.TABLE.sql) - Create Sales Bonus Table
 
 Creates TB_SALES_BONUS table with primary key on EMP_ID
 
-### 2. [INSERT-DATA.sql](SQL/INSERT-DATA.sql) - Load Initial Data
+### 2. [INSERT.DATA.sql](SQL/INSERT.DATA.sql) - Load Initial Data
 
 Inserts 10 employee records with varying regions and sales volumes  
 Coverage: EU=3, NE=3, AS=2, SW=2. High sales (>=150000): 5 employees
@@ -173,25 +173,25 @@ Coverage: EU=3, NE=3, AS=2, SW=2. High sales (>=150000): 5 employees
 
 ### Step 1: Create DB2 Table
 
-**Execute** [SQL/CREATE-TABLE.sql](SQL/CREATE-TABLE.sql) via SPUFI or QMF
+**Execute** [SQL/CREATE.TABLE.sql](SQL/CREATE.TABLE.sql) via SPUFI or QMF
 
 ### Step 2: Load Initial Sales Bonus Data
 
-**Execute** [SQL/INSERT-DATA.sql](SQL/INSERT-DATA.sql) via SPUFI or QMF  
-**See** [DATA/TB-SALES-BONUS-BEFORE](DATA/TB-SALES-BONUS-BEFORE)
+**Execute** [SQL/INSERT.DATA.sql](SQL/INSERT.DATA.sql) via SPUFI or QMF  
+**See** [DATA/TB.SALES.BONUS.BEFORE](DATA/TB.SALES.BONUS.BEFORE)
 
 ### Step 3: Execute Bonus Calculation Program
 
 **Submit** [JCL/COBDB2CP.jcl](JCL/COBDB2CP.jcl)  
 **See** [OUTPUT/SYSOUT.txt](OUTPUT/SYSOUT.txt)  
-**Review** [DATA/BONUS-REPORT](DATA/BONUS-REPORT) for detailed report
+**Review** [DATA/BONUS.REPORT](DATA/BONUS.REPORT) for detailed report
 
 ### Step 4: Verify Results
 
 **Query updated table:**  
 
 - SELECT EMP_ID, EMP_NAME, REGION_CODE, YEAR_SALES, BONUS_AMT FROM TB_SALES_BONUS ORDER BY EMP_ID  
-- **Compare** Before [DATA/TB-SALES-BONUS-BEFORE](DATA/TB-SALES-BONUS-BEFORE) vs After [DATA/TB-SALES-BONUS-AFTER](DATA/TB-SALES-BONUS-AFTER)  
+- **Compare** Before [DATA/TB.SALES.BONUS.BEFORE](DATA/TB.SALES.BONUS.BEFORE) vs After [DATA/TB.SALES.BONUS.AFTER](DATA/TB.SALES.BONUS.AFTER)  
 - **Verify calculations** EU × 1.12, NE × 1.10, AS × 1.08, SW × 1.05, high-sales × 1.05, cap at 20000  
 - **Check report** Header, 10 detail lines, STATUS indicators (HIGHSAL/CAP/LOW/OK), Footer with total count
 
