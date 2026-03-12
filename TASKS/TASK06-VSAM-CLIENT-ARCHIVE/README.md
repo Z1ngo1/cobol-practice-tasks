@@ -123,7 +123,7 @@ Active clients remaining after deletion of archived records.
      - RECORDS READ: total records processed
      - RECORDS DELETE: clients archived and removed
      - RECORDS KEPT: active clients remaining
-   - Stops execution with proper return code
+   - STOP RUN
 
 ## JCL Jobs
 
