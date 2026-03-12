@@ -25,6 +25,13 @@ A company needs to archive and remove inactive client records from the master da
 **Key:**
 - CLIENT-ID (6 characters, positions 1-6)
 
+**Record Layout:**
+| Field | PIC | Length | Description |
+|---|---|---|---|
+| CLIENT-ID | X(6) | 6 | Client ID (Primary Key) |
+| CLIENT-NAME | X(20) | 20 | Client full name |
+| CLIENT-LAST-DATE | 9(8) | 8 | Last activity date (YYYYMMDD) |
+
 **Sample Data:** [DATA/CLIENT.MASTER.BEFORE](DATA/CLIENT.MASTER.BEFORE)
 
 #### 2. PARAM-FILE (PS) - Cutoff Date Parameter
@@ -35,6 +42,12 @@ A company needs to archive and remove inactive client records from the master da
 - SEQUENTIAL
 **Record Format:**
 - Fixed (RECFM=F, LRECL=80)
+
+**Record Layout:**
+| Field | PIC | Length | Description |
+|---|---|---|---|
+| PARAM-DATE | X(8) | 8 | Cutoff date (YYYYMMDD) |
+| FILLER | X(72) | 72 | Unused |
 
 **Logic:** Records with CLIENT-LAST-DATE <= CUTOFF-DATE are considered inactive and archived
 
@@ -50,6 +63,14 @@ A company needs to archive and remove inactive client records from the master da
 - SEQUENTIAL
 **Record Format:**
 - Fixed (RECFM=F, LRECL=80)
+
+**Record Layout:**
+| Field | PIC | Length | Description |
+|---|---|---|---|
+| ARCH-ID | X(6) | 6 | Client ID |
+| ARCH-NAME | X(20) | 20 | Client full name |
+| ARCH-DATE | 9(8) | 8 | Last activity date (YYYYMMDD) |
+| FILLER | X(46) | 46 | Unused |
 
 **Expected Output:** [DATA/ARCHIVE.OLD.OUTPUT](DATA/ARCHIVE.OLD.OUTPUT)
 
