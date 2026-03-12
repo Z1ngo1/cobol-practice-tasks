@@ -16,12 +16,16 @@ A bank needs to process daily transactions (deposits and withdrawals) against cu
 
 #### 1. ACCT.MASTER (VSAM KSDS) - Account Master File
 
-**Access Mode:** 
-- INPUT-OUTPUT (Random)
-**Organization:**
-- INDEXED (KSDS)
-**Key:**
-- ACCT-NUM (5 characters, positions 1-5)
+**Access Mode:** INPUT-OUTPUT (Random)
+**Organization:** INDEXED (KSDS)
+**Key:** ACCT-NUM (5 characters, positions 1-5)
+
+**Record Layout:**
+| Field | PIC | Length | Description |
+|---|---|---|---|
+| ACCT-ID | X(5) | 5 | Account ID (Primary Key) |
+| ACCT-NAME | X(20) | 20 | Account holder name |
+| ACCT-BAL | 9(5)V99 | 7 | Current balance (implied decimal) |
 
 **Sample Data:** [DATA/ACCT.MASTER.BEFORE](DATA/ACCT.MASTER.BEFORE)
 
@@ -30,6 +34,14 @@ A bank needs to process daily transactions (deposits and withdrawals) against cu
 - **Access Mode:** INPUT (Sequential)
 - **Organization:** SEQUENTIAL
 - **Record Format:** Fixed (RECFM=FB, LRECL=80)
+
+**Record Layout:**
+| Field | PIC | Length | Description |
+|---|---|---|---|
+| TRANS-ACCT-ID | X(5) | 5 | Account ID to look up in VSAM |
+| TRANS-TYPE | X(1) | 1 | Transaction type: D=Deposit, W=Withdrawal |
+| TRANS-AMOUNT | 9(5)V99 | 7 | Transaction amount (implied decimal) |
+| FILLER | X(67) | 67 | Unused |
 
 **Sample Data:** [DATA/TRANS.FILE.INPUT](DATA/TRANS.FILE.INPUT)
 
@@ -40,6 +52,14 @@ A bank needs to process daily transactions (deposits and withdrawals) against cu
 - **Access Mode:** OUTPUT (Sequential)
 - **Organization:** SEQUENTIAL
 - **Record Format:** FIXED (RECFM=FB, LRECL=80)
+
+**Record Layout:**
+| Field | PIC | Length | Description |
+|---|---|---|---|
+| REP-MSG-CONST | X(13) | 13 | Constant: 'TRANS ERROR: ' |
+| REP-ID | X(5) | 5 | Account ID from failed transaction |
+| FILLER | X(1) | 1 | Space |
+| REP-DESC | X(61) | 61 | Error description (ACCOUNT NOT FOUND / INSUFFICIENT FUNDS) |
 
 **Error Types:**
 - ACCOUNT NOT FOUND - Account number doesn't exist in master file
@@ -58,7 +78,26 @@ Updated balances after successful transactions.
 **FILE STATUS Codes:**
 - 00 - Successful operation
 - 23 - Record not found (invalid account number)
-- Other codes - I/O errors (logged to SYSOUT)  
+- Other codes - I/O errors (logged to SYSOUT)
+
+### Transaction Processing Logic
+
+**Deposit (TRANS-TYPE = 'D'):**
+- NEW-BALANCE = ACCT-BAL + TRANS-AMOUNT
+- REWRITE updated record to VSAM
+
+**Withdrawal (TRANS-TYPE = 'W'):**
+- If ACCT-BAL >= TRANS-AMOUNT: subtract and REWRITE
+- If ACCT-BAL < TRANS-AMOUNT: write INSUFFICIENT FUNDS to error report
+
+**Account Not Found (ACCT-STATUS = '23'):**
+- Write ACCOUNT NOT FOUND to error report, continue processing
+
+**Examples:**
+- ACCT 10001, D, 500.00 → balance +500.00 (REWRITE)
+- ACCT 10002, W, 200.00, balance 1000.00 → balance 800.00 (REWRITE)
+- ACCT 10003, W, 9999.00, balance 500.00 → INSUFFICIENT FUNDS (error)
+- ACCT 99999, D, 100.00 → ACCOUNT NOT FOUND (error)
 
 ## Program Flow
 
@@ -86,6 +125,7 @@ Updated balances after successful transactions.
 3. **Termination**
    - Closes all files (VSAM, TRANS-FILE, ERROR-REPORT)
    - Validates FILE STATUS after every file operation
+   - STOP RUN
 
 ## JCL Jobs
 
