@@ -155,7 +155,7 @@ Defines KSDS cluster for client master file.
 
 **Key Parameters:**
 - RECORDSIZE(74,74) - Fixed 74-byte records
-- KEYS(6,0) 6-byte key starting at position 0
+- KEYS(6,0) - 6-byte key starting at position 0
 - INDEXED - KSDS organization
 
 ### 2. [COMPRUN.jcl](JCL/COMPRUN.jcl) - Compile and Run
