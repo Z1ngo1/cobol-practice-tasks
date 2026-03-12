@@ -216,7 +216,7 @@ Company processes daily credit card transactions and must validate each transact
 
 ### 1. [DEFKSDS.jcl](JCL/DEFKSDS.jcl) - Define VSAM KSDS Cluster
 
-Defines KSDS cluster for product master file.
+Defines KSDS cluster for card master file.
 
 **Key Parameters:**
 - RECORDSIZE(41,41) - Fixed 41-byte records
@@ -227,7 +227,7 @@ Defines KSDS cluster for product master file.
 
 Standard compile-link-go JCL using MYCOMPGO procedure.
 
-- VSAMDD: MASTER.VSAM (VSAM KSDS)
+- VSAMDD: CARD.MASTER.VSAM (VSAM KSDS)
 - TRNSDD: TRANS.DAILY (daily transactions input)
 - APRVDD: APPROVED.FILE (approved output)
 - DECLDD: DECLINED.FILE (declined output)
@@ -239,7 +239,7 @@ Standard compile-link-go JCL using MYCOMPGO procedure.
 **Submit** [JCL/DEFKSDS.jcl](JCL/DEFKSDS.jcl)
 **Verify:** IDCAMS completes RC=0, cluster defined
 
-### Step 2: Load Product Master Data
+### Step 2: Load Card Master Data
 
 **Use File Manager**
 1. Navigate to VSAM file in ISPF 
@@ -272,7 +272,7 @@ Standard compile-link-go JCL using MYCOMPGO procedure.
 
 - **Approved count:** 2 records (TRANS 00001 and 00008)
 - **Declined count:** 7 records (3 EXPIRED, 2 BLOCKED, 2 NOT FOUND)
-- **Verify decline reasons:** check DECLINED-FILE columns 25–34 for reason codes
+- **Verify decline reasons:** check DECLINED-FILE columns 33–42 for reason codes
 - **Confirm summary:** TOTAL=9, APPROVED=2, DECLINED=7, NOT FOUND=2, BLOCKED=2, EXPIRED=3
 
 ## Common Issues
@@ -280,8 +280,7 @@ Standard compile-link-go JCL using MYCOMPGO procedure.
 ### Issue 1: FILE STATUS '92' or '93' on VSAM Open
 
 **Cause:** VSAM KSDS not defined or cluster definition missing  
-**Solution:** Re-run JCL/IDCAMS-VSAM.jcl, verify IDCAMS RC=0
-Verification: LISTCAT ENTRY(Z73460.TASK11.CARD.MASTER.VSAM) ALL
+**Solution:** Re-run JCL/DEFKSDS.jcl, verify IDCAMS RC=0
 
 ### Issue 2: FILE STATUS '23' for All Transactions
 
