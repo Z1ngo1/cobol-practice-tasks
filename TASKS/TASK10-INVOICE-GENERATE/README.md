@@ -36,7 +36,7 @@ Company processes daily customer orders and generates invoices with full product
 | PRODUCT-NAME | X(20) | 20 | Product name |
 | UNIT-PRICE | 9(5)V99 | 7 | Unit price (packed, no decimal point) |
 
-[DATA/PROD.MASTER.VSAM](DATA/PROD.MASTER.VSAM)
+**Sample Data:** [DATA/PROD.MASTER.VSAM](DATA/PROD.MASTER.VSAM)
 
 #### 2. ORDERS.DAILY (PS) - Daily Orders File
 
