@@ -178,7 +178,7 @@ Defines KSDS cluster for product master file.
 
 Standard compile-link-go JCL using MYCOMPGO procedure.
 
-- VSAMDD - PROD.MASTER.VSAM (VSAM KSDS)
+- VSAMDD: PROD.MASTER.VSAM (VSAM KSDS)
 - ORDD: ORDERS.DAILY (PS input)
 - OUTDD: INVOICE.FILE (output report)
 
