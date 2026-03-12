@@ -18,11 +18,17 @@ Company performs annual salary indexing based on department policy. The system m
 
 #### 1. TB_EMP_SALARY (DB2 Table) - Employee Salary Master
 
+**Table Structure:**
+| Column | DB2 Type | COBOL PIC | Description |
+|---|---|---|---|
+| EMP_ID | CHAR(5) NOT NULL | PIC X(5) | Employee ID (Primary Key) |
+| EMP_NAME | VARCHAR(30) | PIC X(30) + LEN PIC S9(4) COMP-5 | Employee full name |
+| DEPT_CODE | CHAR(3) | PIC X(3) | Department code (IT / SAL / other) |
+| SALARY | DECIMAL(9,2) | PIC S9(7)V9(2) COMP-3 | Current salary |
+
 **Sample Data:** [DATA/TB.EMP.SALARY.BEFORE](DATA/TB.EMP.SALARY.BEFORE)
 
-**DCLGEN Structure:** 
-
-**Sample Data:** [DCLGEN/TASK7.cpy](DCLGEN/TASK7.cpy)
+**DCLGEN:** [DCLGEN/TASK7.cpy](DCLGEN/TASK7.cpy)
 
 ### Output Files
 
@@ -34,6 +40,17 @@ Company performs annual salary indexing based on department policy. The system m
 - SEQUENTIAL
 **Record Format:**
 - Fixed (RECFM=F, LRECL=80)
+
+**Report Line Layout:**
+| Field | PIC | Description |
+|---|---|---|
+| EMP-ID | X(5) | Employee ID |
+| OLD_SAL | Z(7).99 | Salary before indexing |
+| NEW_SAL | Z(7).99 | Salary after indexing |
+| STATUS | X(7) | Result: OK or MAXCAP |
+
+**Header:** `EMPID   OLD_SAL    NEW_SAL  STATUS`  
+**Footer:** `TOTAL: nnn RECORDS UPDATED`
 
 **Expected Output:** [DATA/SALARY.REPORT](DATA/SALARY.REPORT)
 
