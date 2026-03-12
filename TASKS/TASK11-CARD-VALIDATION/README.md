@@ -263,10 +263,10 @@ Standard compile-link-go JCL using MYCOMPGO procedure.
 
 ### Step 4: Execute Validation Program
 
-**Submit** [JCL/COMPRUN.jcl](JCL/COMPRUN.jcl)
-**See** [OUTPUT/SYSOUT.txt](OUTPUT/SYSOUT.txt) for execution summary and date display
-**Review** [DATA/APPROVED.FILE](DATA/APPROVED.FILE) — should contain 2 approved transactions
-**Review** [DATA/DECLINED.FILE](DATA/DECLINED.FILE) — should contain 7 declined transactions
+**Submit** [JCL/COMPRUN.jcl](JCL/COMPRUN.jcl)  
+**See** [OUTPUT/SYSOUT.txt](OUTPUT/SYSOUT.txt) for execution summary and date display  
+**Review** [DATA/APPROVED.FILE](DATA/APPROVED.FILE) — should contain 2 approved transactions  
+**Review** [DATA/DECLINED.FILE](DATA/DECLINED.FILE) — should contain 7 declined transactions  
 
 ### Step 5: Verify Results
 
@@ -279,43 +279,43 @@ Standard compile-link-go JCL using MYCOMPGO procedure.
 
 ### Issue 1: FILE STATUS '92' or '93' on VSAM Open
 
-**Cause:** VSAM KSDS not defined or cluster definition missing
+**Cause:** VSAM KSDS not defined or cluster definition missing  
 **Solution:** Re-run JCL/IDCAMS-VSAM.jcl, verify IDCAMS RC=0
 Verification: LISTCAT ENTRY(Z73460.TASK11.CARD.MASTER.VSAM) ALL
 
 ### Issue 2: FILE STATUS '23' for All Transactions
 
-**Cause:** VSAM card master file is empty or wrong key field offset
+**Cause:** VSAM card master file is empty or wrong key field offset  
 **Solution:** Verify data loaded via REPRO, check KEYS(16,0) matches CARD-NUMBER PIC 9(16) at offset 0
 Confirm LISTCAT shows non-zero REC-TOTAL for the cluster
 
 ### Issue 3: All Active Cards Showing as EXPIRED
 
-**Cause:** System date comparison logic error — YY extraction from YYYYMMDD incorrect
+**Cause:** System date comparison logic error — YY extraction from YYYYMMDD incorrect  
 **Solution:** Verify MOVE WS-CUR-YYYY(3:2) TO WS-CUR-YY extracts positions 3 and 4 of the 4-digit year
 Check SYSOUT displays correct COMPARE YEAR and COMPARE MONTH values at startup
 
 ### Issue 4: Abend S0C7 (Data Exception)
 
-**Cause:** Non-numeric data in TRANSACTION-AMOUNT, TRANSACTION-CARD-NUM, or CARD-EXPIRY-DATE fields
+**Cause:** Non-numeric data in TRANSACTION-AMOUNT, TRANSACTION-CARD-NUM, or CARD-EXPIRY-DATE fields  
 **Solution:** Verify TRANS-DAILY-INPUT TRANSACTION-AMOUNT is 7 digits at offset 21 (no spaces)
 Check CARD-MASTER-VSAM-INPUT expiry field is exactly 4 numeric digits in MMYY format
 
 ### Issue 5: Output Files Not Allocated (APRVDD or DECLDD Missing)
 
-**Cause:** REPDD1/REPDD2 delete step failed or output DSN conflict from previous run
+**Cause:** REPDD1/REPDD2 delete step failed or output DSN conflict from previous run  
 **Solution:** Verify STEP005 (IEFBR14) completed RC=0 for both APPROVED.FILE and DECLINED.FILE
 Check both APRVDD and DECLDD DD statements present in STEP010
 
 ### Issue 6: Transactions File Not Found (TRNSDD)
 
-**Cause:** Z73460.TASK11.TRANS.DAILY not cataloged or wrong DSN
+**Cause:** Z73460.TASK11.TRANS.DAILY not cataloged or wrong DSN  
 **Solution:** Verify PS dataset exists: LISTCAT ENTRY(Z73460.TASK11.TRANS.DAILY)
 Check TRANS-STATUS after OPEN — should be '00', not '35' (file not found)
 
 ### Issue 7: Wrong Decline Counts in Summary
 
-**Cause:** Specific reason counters (TOTAL-NOT-FOUND, TOTAL-BLOCKED, TOTAL-EXPIRED) not incremented
+**Cause:** Specific reason counters (TOTAL-NOT-FOUND, TOTAL-BLOCKED, TOTAL-EXPIRED) not incremented  
 **Solution:** Verify WRITE-DECLINED-TRANS paragraph increments the correct sub-counter based on WS-REASON value after TOTAL-DECLINED increment
 Expected: NOT FOUND=2, BLOCKED=2, EXPIRED=3
 
