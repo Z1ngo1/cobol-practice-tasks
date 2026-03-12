@@ -128,40 +128,40 @@ Company processes daily customer orders and generates invoices with full product
 ## Program Flow
 
 1. **Initialization: OPEN-ALL-FILES**
-- Opens PRODUCT-MASTER-FILE (VSAM KSDS, INPUT, RANDOM)
-- Validates VSAM-STATUS = '00'
-- Opens DAILY-ORDERS-FILE (PS, INPUT)
-- Validates ORDERS-STATUS = '00'
-- Opens INVOICE-OUTPUT-FILE (PS, OUTPUT)
-- Validates OUT-STATUS = '00'
+   - Opens PRODUCT-MASTER-FILE (VSAM KSDS, INPUT, RANDOM)
+   - Validates VSAM-STATUS = '00'
+   - Opens DAILY-ORDERS-FILE (PS, INPUT)
+   - Validates ORDERS-STATUS = '00'
+   - Opens INVOICE-OUTPUT-FILE (PS, OUTPUT)
+   - Validates OUT-STATUS = '00'
 
 2. **Main Loop: PROCESS-ORDERS**
-- Loop PERFORM UNTIL EOF:
-- READ DAILY-ORDERS-FILE AT END SET EOF TO TRUE
-- If ORDERS-STATUS = '00': increment TOTAL-ORDERS, perform PROCESS-ORDER
-- If ORDERS-STATUS ≠ '00': display error, STOP RUN
+   - Loop PERFORM UNTIL EOF:
+     - READ DAILY-ORDERS-FILE AT END SET EOF TO TRUE
+     - If ORDERS-STATUS = '00': increment TOTAL-ORDERS, perform PROCESS-ORDER
+     - If ORDERS-STATUS ≠ '00': display error, STOP RUN
 
 3. **Single Order Processing: PROCESS-ORDER**
-- MOVE ORDER-PRODUCT-ID TO PRODUCT-ID (set VSAM key)
-- READ PRODUCT-MASTER-FILE (random lookup)
-- EVALUATE VSAM-STATUS:
-- **'00'**: perform WRITE-INVOICE-LINE
-- **'23'**: display NOT FOUND message, increment TOTAL-ERRORS
-- **OTHER**: display VSAM READ ERROR, increment TOTAL-ERRORS, STOP RUN
+   - MOVE ORDER-PRODUCT-ID TO PRODUCT-ID (set VSAM key)
+   - READ PRODUCT-MASTER-FILE (random lookup)
+   - EVALUATE VSAM-STATUS:
+     - **'00'**: perform WRITE-INVOICE-LINE
+     - **'23'**: display NOT FOUND message, increment TOTAL-ERRORS
+     - **OTHER**: display VSAM READ ERROR, increment TOTAL-ERRORS, STOP RUN
 
 4. **Write Invoice: WRITE-INVOICE-LINE**
-- COMPUTE CALC-TOTAL-COST = UNIT-PRICE × ORDER-QUANTITY
-- Move ORDER-ID, PRODUCT-NAME, ORDER-QUANTITY, CALC-TOTAL-COST to OUT-REC
-- WRITE OUT-REC
-- Validate OUT-STATUS = '00'
-- Increment TOTAL-INVOICES
+   - COMPUTE CALC-TOTAL-COST = UNIT-PRICE × ORDER-QUANTITY
+   - Move ORDER-ID, PRODUCT-NAME, ORDER-QUANTITY, CALC-TOTAL-COST to OUT-REC
+   - WRITE OUT-REC
+   - Validate OUT-STATUS = '00'
+   - Increment TOTAL-INVOICES
 
 5. **Termination: CLOSE-ALL-FILES + DISPLAY-SUMMARY**
-- Close all three files with status validation
-- Display summary banner to SYSOUT:
-- TOTAL ORDERS PROCESSED
-- TOTAL INVOICES CREATED
-- TOTAL ERRORS
+   - Close all three files with status validation
+   - Display summary banner to SYSOUT:
+     - TOTAL ORDERS PROCESSED
+     - TOTAL INVOICES CREATED
+     - TOTAL ERRORS
 
 ## JCL Jobs
 
@@ -210,7 +210,6 @@ Standard compile-link-go JCL using MYCOMPGO procedure.
 1. Create PS file with LRECL=80 and insert inline data using IEBGENER:
 - **⚠️ Note:** Inline DD * data is padded to 80 bytes. Verify FD includes FILLER to match LRECL/RECORDSIZE.
 2. Allocate PS file and insert exact length of your file transaction data using IEBGENER (see [JCL SAMPLES/DATA2PS.jcl](../../JCL%20SAMPLES/DATA2PS.jcl) for example)
-
 
 ### Step 4: Execute Program
 
