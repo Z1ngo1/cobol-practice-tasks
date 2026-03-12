@@ -19,9 +19,18 @@ Company performs annual sales bonus calculation based on region and sales perfor
 
 #### 1. TB_SALES_BONUS (DB2 Table) - Sales Bonus Master
 
+**Table Structure:**
+| Column | DB2 Type | COBOL PIC | Description |
+|---|---|---|---|
+| EMP_ID | CHAR(6) NOT NULL | PIC X(6) | Employee ID (Primary Key) |
+| EMP_NAME | VARCHAR(30) | PIC X(30) + LEN PIC S9(4) COMP-5 | Employee full name |
+| REGION_CODE | CHAR(2) | PIC X(2) | Region code (EU / NE / AS / SW) |
+| YEAR_SALES | DECIMAL(11,2) | PIC S9(9)V9(2) COMP-3 | Annual sales amount |
+| BONUS_AMT | DECIMAL(9,2) | PIC S9(7)V9(2) COMP-3 | Current bonus amount |
+
 **Sample Data:** [DATA/TB.SALES.BONUS.BEFORE](DATA/TB.SALES.BONUS.BEFORE)
 
-**DCLGEN Structure:** [DCLGEN/TASK8.cpy](DCLGEN/TASK8.cpy)
+**DCLGEN:** [DCLGEN/TASK8.cpy](DCLGEN/TASK8.cpy)
 
 ### Output Files
 
@@ -35,6 +44,18 @@ Company performs annual sales bonus calculation based on region and sales perfor
 
 **Record Format:**
 - Fixed (RECFM=F, LRECL=80)
+
+**Report Line Layout:**
+| Field | PIC | Description |
+|---|---|---|
+| EMP-ID | X(6) | Employee ID |
+| REGION-CODE | X(2) | Region code |
+| OLD_BONUS | ZZZZ9.99 | Bonus before calculation |
+| NEW_BONUS | ZZZZ9.99 | Bonus after calculation |
+| STATUS | X(7) | Result: HIGHSAL / CAP / LOW / OK |
+
+**Header:** `EMPID  REGION OLD_BONUS NEW_BONUS STATUS`  
+**Footer:** `TOTAL: nnn ROWS UPDATED`
 
 **Expected Output:** [DATA/BONUS.REPORT](DATA/BONUS.REPORT)
 
