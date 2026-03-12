@@ -302,7 +302,7 @@ Check CARD-MASTER-VSAM-INPUT expiry field is exactly 4 numeric digits in MMYY fo
 
 ### Issue 5: Output Files Not Allocated (APRVDD or DECLDD Missing)
 
-**Cause:** REPDD1/REPDD2 delete step failed or output DSN conflict from previous run  
+**Cause:** Delete step failed for APPROVED.FILE or DECLINED.FILE, or output DSN conflict from previous run
 **Solution:** Verify STEP005 (IEFBR14) completed RC=0 for both APPROVED.FILE and DECLINED.FILE
 Check both APRVDD and DECLDD DD statements present in STEP010
 
