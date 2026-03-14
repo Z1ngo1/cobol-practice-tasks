@@ -137,8 +137,6 @@ Coverage: IT=4, SAL=3, HR=2, FIN=1
 **Step 3:** Allocate STEPLIB and OUTDD (IKJEFT01) - sets up DB2 load library and report dataset  
 **Step 4:** Execute Program under DB2 control  
 
-**PROC reference:** [JCLPROC/MYCOMPGO.jcl](../../JCLPROC/MYCOMPGO.jcl)
-
 ## How to Run
 
 ### Step 1: Create DB2 Table
