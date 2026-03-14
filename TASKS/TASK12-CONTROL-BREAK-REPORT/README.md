@@ -31,14 +31,9 @@ LEVEL 2 (MINOR): SHOP change within same region
 
 #### 1. SALES.DATA (PS) - Sorted Sales Data File
 
-**Access Mode:**
-- INPUT (Sequential)
-
-**Organization:**
-- SEQUENTIAL
-
-**Record Format:**
-- Fixed (RECFM=F, LRECL=80)
+**Access Mode:** INPUT (Sequential)  
+**Organization:** SEQUENTIAL  
+**Record Format:** Fixed (RECFM=F, LRECL=80)
 
 **Record Layout:**
 | Field | PIC | Length | Description |
@@ -62,14 +57,9 @@ SOUTHSHOP10030000   → REGION=SOUTH, SHOP=SHOP1, AMOUNT=300.00
 
 #### 2. SALES.REPORT (PS) - Formatted Hierarchical Sales Report
 
-**Access Mode:**
-- OUTPUT (Sequential)
-
-**Organization:**
-- SEQUENTIAL
-
-**Record Format:**
-- Fixed Block (RECFM=FB, LRECL=80)
+**Access Mode:** OUTPUT (Sequential)  
+**Organization:** SEQUENTIAL  
+**Record Format:** Fixed Block (RECFM=FB, LRECL=80)
 
 **Expected Output:** [DATA/SALES.REPORT](DATA/SALES.REPORT)
 
@@ -89,63 +79,21 @@ SOUTHSHOP10030000   → REGION=SOUTH, SHOP=SHOP1, AMOUNT=300.00
 
 ## Program Flow
 
-1. **Open Files: OPEN-ALL-FILES**
-   - Opens SALES-DATA-FILE (PS, INPUT), validates SALES-DATA-STATUS = '00'
-   - Opens SALES-REPORT-FILE (PS, OUTPUT), validates REPORT-STATUS = '00'
+1. **Initialization**
+   - Opens SALES-DATA-FILE and SALES-REPORT-FILE; validates FILE STATUS '00' on each
+   - Reads first record; initializes PREV-REGION, PREV-SHOP, and counters
+   - Writes first detail line; accumulates SALES-AMOUNT into TOTAL-SHOP and TOTAL-REGION
 
-2. **Initialization: INIT-FIRST-RECORD**
-   - Reads first record from SALES-DATA-FILE
-   - Initializes PREV-REGION and PREV-SHOP from first record
-   - Sets REGION-COUNT = 1, SHOP-COUNT = 1
-   - Increments TOTAL-REGION-COUNT and TOTAL-SHOP-COUNT
-   - If file is empty (AT END): sets EOF = 'Y', skips all processing
+2. **Main Processing Loop**
+   - Reads records sequentially until EOF
+   - **REGION change (Level 1 break):** prints SHOP subtotal, prints REGION subtotal (ADD TOTAL-REGION TO GRAND-TOTAL before reset), updates PREV-REGION, resets SHOP-COUNT
+   - **SHOP change within region (Level 2 break):** prints SHOP subtotal, writes blank separator, updates PREV-SHOP, increments TOTAL-SHOP-COUNT and SHOP-COUNT
+   - Accumulates SALES-AMOUNT into TOTAL-SHOP and TOTAL-REGION; writes detail line
+   - AT END: flushes last SHOP subtotal, last REGION subtotal, then prints GRAND-TOTAL and statistics banner
 
-3. **First Record Processing: PROCESS-FIRST-RECORD**
-   - Increments REC-COUNTER
-   - Accumulates SALES-AMOUNT into TOTAL-SHOP and TOTAL-REGION
-   - Writes first detail line to report
-
-4. **Main Loop: PROCESS-SALES**
-   - PERFORM UNTIL EOF:
-     - READ SALES-DATA-FILE
-     - AT END: perform PRINT-FINAL-TOTALS, set EOF = 'Y'
-     - NOT AT END: perform PROCESS-SALES-RECORD
-
-5. **Single Record: PROCESS-SALES-RECORD**
-   - Increment REC-COUNTER
-   - **Level 1 Break (REGION change):**
-     - perform PRINT-SHOP-TOTAL (prints and resets TOTAL-SHOP)
-     - perform PRINT-REGION-TOTAL (adds TOTAL-REGION to GRAND-TOTAL, resets)
-     - update PREV-REGION, increment TOTAL-REGION-COUNT, reset SHOP-COUNT = 0
-     - Note: PREV-SHOP not reset — shop break triggers automatically for first record of new region (standard double-break behavior)
-   - **Level 2 Break (SHOP change, same region):**
-     - perform PRINT-SHOP-TOTAL
-     - write blank separator line
-     - update PREV-SHOP, increment TOTAL-SHOP-COUNT and SHOP-COUNT
-   - Accumulate SALES-AMOUNT into TOTAL-SHOP and TOTAL-REGION
-   - Write detail line: `RECORD: {REGION} {SHOP}: {AMOUNT}`
-
-6. **Shop Subtotal: PRINT-SHOP-TOTAL**
-   - If TOTAL-SHOP > 0: write `   --> SUM FOR SHOP: {AMOUNT}` line
-   - Reset TOTAL-SHOP = 0
-
-7. **Region Subtotal: PRINT-REGION-TOTAL**
-   - Write `====== TOTAL FOR {PREV-REGION}: {AMOUNT} (SHOPS: {SHOP-COUNT})` line
-   - Add TOTAL-REGION to GRAND-TOTAL
-   - Reset TOTAL-REGION = 0
-   - Write blank separator line
-
-8. **Final Totals: PRINT-FINAL-TOTALS**
-   - Perform PRINT-SHOP-TOTAL (last shop)
-   - Perform PRINT-REGION-TOTAL (last region)
-   - Write blank separator
-   - Write `********************************`
-   - Write `GRAND TOTAL SALES: {AMOUNT}`
-   - Write `********************************`
-   - Write `REGIONS: {N}`, `TOTAL SHOPS: {N}`, `TOTAL RECORDS: {N}`
-
-9. **Close Files: CLOSE-ALL-FILES**
-   - Close both files, display warnings on non-zero status (not fatal)
+3. **Termination**
+   - Closes both files (non-zero status on CLOSE is warning only, not fatal)
+   - STOP RUN
 
 ## JCL Jobs
 
@@ -156,16 +104,28 @@ Standard compile-link-go JCL using MYCOMPGO procedure.
 - PSSDD: SALES.DATA (sorted sales input)
 - REPDD: SALES.REPORT (report output)
 
+**PROC reference:** [JCLPROC/MYCOMPGO.jcl](../../JCLPROC/MYCOMPGO.jcl)
+
 ## How to Run
 
 ### Step 1: Allocate and Load Sales Data File
 
 - Upload [DATA/SALES.DATA](DATA/SALES.DATA)
 
+**Alternative:**
+1. Create PS file with LRECL=80 and insert inline data using IEBGENER:
+- **⚠️ Note:** Inline DD * data is padded to 80 bytes. Verify FD includes FILLER to match LRECL/RECORDSIZE.
+2. Allocate PS file and insert exact length of your file data using IEBGENER (see [JCL SAMPLES/DATA2PS.jcl](../../JCL%20SAMPLES/DATA2PS.jcl) for example)
+
 ### Step 2: Execute Report Program
 
-**Submit** [JCL/COMPRUN.jcl](JCL/COMPRUN.jcl)
+**Submit** [JCL/COMPRUN.jcl](JCL/COMPRUN.jcl)  
 **Review** [DATA/SALES.REPORT](DATA/SALES.REPORT) for expected report output
+
+**Alternative:**
+If you prefer to compile and run separately, use these jobs:
+- [JCL SAMPLES/JCLCOMP.jcl](../../JCL%20SAMPLES/JCLCOMP.jcl)
+- [JCL SAMPLES/JCLRUN.jcl](../../JCL%20SAMPLES/JCLRUN.jcl)
 
 ### Step 3: Verify Results
 
@@ -179,46 +139,17 @@ Standard compile-link-go JCL using MYCOMPGO procedure.
 
 ### Issue 1: Report File Not Allocated
 
-**Cause:** STEP005 (IEFBR14 delete) failed or output REPDD DSN mismatch
-**Solution:** Verify STEP005 RC=0, check REPDD DSN matches Z73460.TASK12.SALES.REPORT in both steps
+**Cause:** IEFBR14 delete step failed or output REPDD DSN mismatch
+**Solution:** Verify delete step RC=0; check REPDD DSN matches Z73460.TASK12.SALES.REPORT in both steps
 
-### Issue 2: Last Region or Last Shop Total Missing
-
-**Cause:** PRINT-FINAL-TOTALS not triggered — AT END logic issue
-**Solution:** Verify PRINT-FINAL-TOTALS is performed inside AT END clause of READ in PROCESS-SALES loop
-Check that REC-COUNTER > 0 condition is satisfied before printing
-
-### Issue 3: GRAND-TOTAL Shows Zero
-
-**Cause:** TOTAL-REGION reset before being added to GRAND-TOTAL in PRINT-REGION-TOTAL
-**Solution:** Verify order in PRINT-REGION-TOTAL: ADD TOTAL-REGION TO GRAND-TOTAL must come BEFORE MOVE 0 TO TOTAL-REGION
-
-### Issue 4: SHOP-COUNT Shows 0 in Region Total
-
-**Cause:** SHOP-COUNT reset to 0 during region break before printing region total
-**Solution:** Verify PRINT-REGION-TOTAL uses SHOP-COUNT (which still holds count for completed region) and that reset happens AFTER the WRITE
-
-### Issue 5: First Record Not Processed
-
-**Cause:** Program reads first record in INIT-FIRST-RECORD but skips PROCESS-FIRST-RECORD due to EOF flag
-**Solution:** Verify IF NOT EOF condition wrapping PROCESS-FIRST-RECORD and PROCESS-SALES calls in MAIN-LOGIC
-
-### Issue 6: Abend S0C7 (Data Exception)
+### Issue 2: Abend S0C7 (Data Exception)
 
 **Cause:** Non-numeric SALES-AMOUNT in input records
-**Solution:** Verify SALES-DATA-INPUT SALES-AMOUNT field is exactly 7 numeric digits at offset 10 (5 integer + 2 decimal, no decimal point in data)
-
-### Issue 7: TOTAL-SHOP-COUNT vs SHOP-COUNT Confusion
-
-**Cause:** Two separate shop counters serve different purposes
-- **SHOP-COUNT:** shops within current region only (reset on region break), used in region total line `(SHOPS: N)`
-- **TOTAL-SHOP-COUNT:** lifetime count of all shops across all regions, reported in final statistics
+**Solution:** Verify SALES-AMOUNT field is exactly 7 numeric digits at offset 10 (5 integer + 2 decimal, no decimal point in data)
 
 ## Notes
 
 - Input file MUST be pre-sorted; no internal sorting is performed
 - Two-pass design: INIT-FIRST-RECORD reads record 1 separately, then PROCESS-SALES reads records 2–N
-- FUNCTION TRIM used for clean numeric display in STRING operations
-- TOTAL-SHOP reset guard: PRINT-SHOP-TOTAL only writes if TOTAL-SHOP > 0 (prevents spurious zero lines)
-- PS-to-PS batch processing
+- PRINT-SHOP-TOTAL only writes if TOTAL-SHOP > 0 — prevents spurious zero lines on region break
 - Tested on IBM z/OS with Enterprise COBOL
