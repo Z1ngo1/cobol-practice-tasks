@@ -126,21 +126,11 @@ Standard compile-link-go JCL using MYCOMPGO procedure.
 
 ### Step 1: Allocate and Load Tax Rates File
 
-- Upload [DATA/TAX.RATES](DATA/TAX.RATES)
+- Upload [DATA/TAX.RATES](DATA/TAX.RATES) to PS dataset manually via ISPF
 
-**Alternative:**
-1. Create PS file with LRECL=80 and insert inline data using IEBGENER:
-- **⚠️ Note:** Inline DD * data is padded to 80 bytes. Verify FD includes FILLER to match LRECL/RECORDSIZE.
-2. Allocate PS file and insert exact length data using IEBGENER (see [JCL SAMPLES/DATA2PS.jcl](../../JCL%20SAMPLES/DATA2PS.jcl) for example)
-  
 ### Step 2: Allocate and Load Employee Salary File
 
-- Upload [DATA/EMP.SALARY](DATA/EMP.SALARY)
-
-**Alternative:**
-1. Create PS file with LRECL=80 and insert inline data using IEBGENER:
-- **⚠️ Note:** Inline DD * data is padded to 80 bytes. Verify FD includes FILLER to match LRECL/RECORDSIZE.
-2. Allocate PS file and insert exact length data using IEBGENER (see [JCL SAMPLES/DATA2PS.jcl](../../JCL%20SAMPLES/DATA2PS.jcl) for example)
+- Upload [DATA/EMP.SALARY](DATA/EMP.SALARY) to PS dataset manually via ISPF
 
 ### Step 3: Execute Program
 
