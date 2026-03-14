@@ -21,17 +21,10 @@ Company processes daily credit card transactions and must validate each transact
 
 #### 1. CARD.MASTER.VSAM (VSAM KSDS) - Card Master File
 
-**Access Mode:**
-- RANDOM (direct lookup by CARD-NUMBER key)
-
-**Organization:**
-- INDEXED (KSDS)
-
-**KEY:** 
-- CARD-NUMBER (PIC 9(16))
-
-**Record Format:**
-- Fixed, LRECL=41
+**Access Mode:** RANDOM (direct lookup by CARD-NUMBER key)  
+**Organization:** INDEXED (KSDS)  
+**KEY:** CARD-NUMBER (PIC 9(16))  
+**Record Format:** Fixed, LRECL=41  
 
 **Record Layout:**
 | Field | PIC | Length | Description |
@@ -45,14 +38,9 @@ Company processes daily credit card transactions and must validate each transact
 
 #### 2. TRANS.DAILY (PS) - Daily Transactions File
 
-**Access Mode:**
-- INPUT (Sequential)
-
-**Organization:**
-- SEQUENTIAL
-
-**Record Format:**
-- Fixed (RECFM=F, LRECL=80)
+**Access Mode:** INPUT (Sequential)  
+**Organization:** SEQUENTIAL  
+**Record Format:** Fixed (RECFM=F, LRECL=80)  
 
 **Record Layout:**
 | Field | PIC | Length | Description |
@@ -68,14 +56,9 @@ Company processes daily credit card transactions and must validate each transact
 
 #### 3. APPROVED.FILE (PS) - Approved Transactions
 
-**Access Mode:**
-- OUTPUT (Sequential)
-
-**Organization:**
-- SEQUENTIAL
-
-**Record Format:**
-- Fixed (RECFM=F, LRECL=80)
+**Access Mode:** OUTPUT (Sequential)  
+**Organization:** SEQUENTIAL  
+**Record Format:** Fixed (RECFM=F, LRECL=80)
 
 **Record Layout:**
 | Field | PIC | Length | Description |
@@ -91,14 +74,9 @@ Company processes daily credit card transactions and must validate each transact
 
 #### 4. DECLINED.FILE (PS) - Declined Transactions
 
-**Access Mode:**
-- OUTPUT (Sequential)
-
-**Organization:**
-- SEQUENTIAL
-
-**Record Format:**
-- Fixed (RECFM=F, LRECL=80)
+**Access Mode:** OUTPUT (Sequential)  
+**Organization:** SEQUENTIAL  
+**Record Format:** Fixed (RECFM=F, LRECL=80)
 
 **Record Layout:**
 | Field | PIC | Length | Description |
@@ -114,40 +92,6 @@ Company processes daily credit card transactions and must validate each transact
 
 **Expected Output:** [DATA/DECLINED.FILE](DATA/DECLINED.FILE)
 
-### Validation Logic
-
-**Validation Priority (checks applied in order):**
-
-1. **NOT FOUND** — VSAM FILE STATUS = '23'
-   - Card number does not exist in CARD.MASTER.VSAM
-   - Action: write to DECLINED with reason 'NOT FOUND', increment TOTAL-NOT-FOUND
-
-2. **BLOCKED** — CARD-STATUS = 'B'
-   - Card exists but is blocked by issuer
-   - Action: write to DECLINED with reason 'BLOCKED', increment TOTAL-BLOCKED
-
-3. **EXPIRED** — CARD-EXPIRY-DATE < current system date
-   - Expiry check: CARD-EXPIRY-DATE format is MMYY (e.g. 1227 = December 2027)
-   - Compare WS-CARD-YY < WS-CUR-YY → EXPIRED
-   - Compare WS-CARD-YY = WS-CUR-YY AND WS-CARD-MM < WS-CUR-MM → EXPIRED
-   - Action: write to DECLINED with reason 'EXPIRED', increment TOTAL-EXPIRED
-
-4. **APPROVED** — All checks passed
-   - Card found, status = 'A', expiry date >= current date
-   - Action: write to APPROVED, increment TOTAL-APPROVED
-
-**Current Date Handling:**
-- System date obtained via ACCEPT WS-CUR-DATE-GROUP FROM DATE YYYYMMDD
-- Only YY (last 2 digits of year) and MM used for comparison
-- SYSOUT displays current date, compare year, and compare month at startup
-
-**Examples (run date: 2026/02/23):**
-- TRANS 00001, card 1111222233334444, expiry 1227 (Dec 2027), status A → APPROVED
-- TRANS 00002, card 2222333344445555, expiry 0325 (Mar 2025), status A → EXPIRED (2025 < 2026)
-- TRANS 00004, card 4444555566667777, expiry 0126, status B → BLOCKED
-- TRANS 00006, card 9999888877776666, not in VSAM → NOT FOUND
-- TRANS 00008, card 8888999900001111, expiry 1026 (Oct 2026), status A → APPROVED (month 10 >= 02)
-
 ### Error Handling
 
 **FILE STATUS Codes (VSAM - CARD-MASTER-FILE):**
@@ -160,57 +104,49 @@ Company processes daily credit card transactions and must validate each transact
 - 00 - Successful operation
 - Other codes - I/O errors (program displays error and stops)
 
+### Validation Logic
+
+**Validation Priority (first failing check wins):**
+
+| Priority | Check | Condition | Reason Code |
+|---|---|---|---|
+| 1 | Card exists | VSAM FILE STATUS = '23' | NOT FOUND |
+| 2 | Card active | CARD-STATUS = 'B' | BLOCKED |
+| 3 | Not expired | CARD-EXPIRY-DATE < current date | EXPIRED |
+| — | All passed | — | APPROVED |
+
+**Expiry Comparison (MMYY format):**
+- WS-CARD-YY < WS-CUR-YY → EXPIRED
+- WS-CARD-YY = WS-CUR-YY AND WS-CARD-MM < WS-CUR-MM → EXPIRED
+- Otherwise → not expired
+
+**Current Date:** obtained via `ACCEPT WS-CUR-DATE-GROUP FROM DATE YYYYMMDD`; YY = positions 3:2 of year, MM = positions 5:2
+
+**Examples (run date: 2026/02/23):**
+- **TRANS 00001**, card 1111222233334444, expiry 1227, status A → APPROVED
+- **TRANS 00002**, card 2222333344445555, expiry 0325, status A → EXPIRED (2025 < 2026)
+- **TRANS 00004**, card 4444555566667777, expiry 0126, status B → BLOCKED
+- **TRANS 00006**, card 9999888877776666, not in VSAM → NOT FOUND
+- **TRANS 00008**, card 8888999900001111, expiry 1026, status A → APPROVED (month 10 >= 02)
+
 ## Program Flow
 
-1. **Initialization: INIT-PROCESS**
-   - ACCEPT WS-CUR-DATE-GROUP FROM DATE YYYYMMDD
-   - Extract WS-CUR-YY (positions 3:2 of year) and WS-CUR-MM
-   - Display current date, compare year, compare month to SYSOUT
+1. **Initialization**
+   - ACCEPT WS-CUR-DATE-GROUP FROM DATE YYYYMMDD; extracts WS-CUR-YY and WS-CUR-MM
+   - Displays current date, compare year, compare month to SYSOUT
+   - Opens all four files (VSAM RANDOM, TRANS INPUT, APPROVED OUTPUT, DECLINED OUTPUT); validates FILE STATUS '00' on each
 
-2. **Open Files: OPEN-ALL-FILES**
-   - Opens CARD-MASTER-FILE (VSAM KSDS, INPUT, RANDOM), validates VSAM-STATUS = '00'
-   - Opens DAILY-TRANS-FILE (PS, INPUT), validates TRANS-STATUS = '00'
-   - Opens APPROVED-TRANS-FILE (PS, OUTPUT), validates APRV-STATUS = '00'
-   - Opens DECLINED-TRANS-FILE (PS, OUTPUT), validates DECL-STATUS = '00'
+2. **Main Processing Loop**
+   - Reads DAILY-TRANS-FILE sequentially until EOF; increments TOTAL-TRANSACTIONS per record
+   - For each transaction: MOVEs TRANSACTION-CARD-NUM to CARD-NUMBER, executes random READ on VSAM
+   - FILE STATUS '23' → writes to DECLINED with reason NOT FOUND
+   - FILE STATUS '00' → checks CARD-STATUS: 'B' → BLOCKED; else checks expiry: expired → EXPIRED; else → APPROVED
+   - Other VSAM status → displays TRANS-ID and CARD-NUM, STOP RUN
 
-3. **Main Loop: PROCESS-TRANS**
-   - Loop PERFORM UNTIL EOF:
-     - MOVE SPACES to APPROVED-REC and DECLINED-REC (clear output buffers)
-     - READ DAILY-TRANS-FILE AT END SET EOF TO TRUE
-     - If TRANS-STATUS = '00': increment TOTAL-TRANSACTIONS, perform PROCESS-TRANSACTION
-     - If TRANS-STATUS ≠ '00': display error, STOP RUN
-
-4. **Single Transaction: PROCESS-TRANSACTION**
-   - MOVE TRANSACTION-CARD-NUM TO CARD-NUMBER (set VSAM key)
-   - READ CARD-MASTER-FILE (random lookup)
-   - If VSAM-STATUS = '23': move 'NOT FOUND' to WS-REASON, perform WRITE-DECLINED-TRANS
-   - If VSAM-STATUS = '00': perform VALIDATE-STATUS
-   - If other VSAM-STATUS: display critical error with TRANS-ID and CARD-NUM, STOP RUN
-
-5. **Status Validation: VALIDATE-STATUS**
-   - If CARD-STATUS = 'B': move 'BLOCKED' to WS-REASON, perform WRITE-DECLINED-TRANS
-   - Else: perform VALIDATE-EXPIRY
-
-6. **Expiry Validation: VALIDATE-EXPIRY**
-   - Extract WS-CARD-MM (positions 1:2) and WS-CARD-YY (positions 3:2) from CARD-EXPIRY-DATE
-   - If WS-CARD-YY < WS-CUR-YY: move 'EXPIRED' to WS-REASON, perform WRITE-DECLINED-TRANS
-   - Else if WS-CARD-YY = WS-CUR-YY AND WS-CARD-MM < WS-CUR-MM: EXPIRED
-   - Else: perform WRITE-APPROVED-TRANS
-
-7. **Write Approved: WRITE-APPROVED-TRANS**
-   - Move TRANS-ID, CARD-NUM, AMOUNT to APPROVED-REC fields
-   - WRITE APPROVED-REC, validate APRV-STATUS = '00'
-   - Increment TOTAL-APPROVED
-
-8. **Write Declined: WRITE-DECLINED-TRANS**
-   - Move TRANS-ID, CARD-NUM, AMOUNT, WS-REASON to DECLINED-REC fields
-   - WRITE DECLINED-REC, validate DECL-STATUS = '00'
-   - Increment TOTAL-DECLINED
-   - Increment specific counter: TOTAL-NOT-FOUND, TOTAL-BLOCKED, or TOTAL-EXPIRED based on WS-REASON
-
-9. **Termination: CLOSE-ALL-FILES + DISPLAY-SUMMARY**
-   - Close all four files with status validation
-   - Display summary banner to SYSOUT with all counters
+3. **Termination**
+   - Closes all four files with status validation
+   - Displays summary to SYSOUT: TOTAL / APPROVED / DECLINED / NOT FOUND / BLOCKED / EXPIRED
+   - STOP RUN
 
 ## JCL Jobs
 
@@ -300,23 +236,10 @@ Check SYSOUT displays correct COMPARE YEAR and COMPARE MONTH values at startup
 **Solution:** Verify TRANS-DAILY-INPUT TRANSACTION-AMOUNT is 7 digits at offset 21 (no spaces)
 Check CARD-MASTER-VSAM-INPUT expiry field is exactly 4 numeric digits in MMYY format
 
-### Issue 5: Output Files Not Allocated (APRVDD or DECLDD Missing)
+### Issue 5: Output or Input Files Not Allocated
 
-**Cause:** Delete step failed for APPROVED.FILE or DECLINED.FILE, or output DSN conflict from previous run
-**Solution:** Verify STEP005 (IEFBR14) completed RC=0 for both APPROVED.FILE and DECLINED.FILE
-Check both APRVDD and DECLDD DD statements present in STEP010
-
-### Issue 6: Transactions File Not Found (TRNSDD)
-
-**Cause:** Z73460.TASK11.TRANS.DAILY not cataloged or wrong DSN  
-**Solution:** Verify PS dataset exists: LISTCAT ENTRY(Z73460.TASK11.TRANS.DAILY)
-Check TRANS-STATUS after OPEN — should be '00', not '35' (file not found)
-
-### Issue 7: Wrong Decline Counts in Summary
-
-**Cause:** Specific reason counters (TOTAL-NOT-FOUND, TOTAL-BLOCKED, TOTAL-EXPIRED) not incremented  
-**Solution:** Verify WRITE-DECLINED-TRANS paragraph increments the correct sub-counter based on WS-REASON value after TOTAL-DECLINED increment
-Expected: NOT FOUND=2, BLOCKED=2, EXPIRED=3
+**Cause:** APPROVED.FILE, DECLINED.FILE not deleted from prior run, or TRANS.DAILY not cataloged  
+**Solution:** Verify IEFBR14 delete step RC=0 for both output files; confirm APRVDD, DECLDD, TRNSDD DD statements present in COMPRUN.jcl; check TRANS-STATUS after OPEN (should be '00', not '35')
 
 ## Program Output (SYSOUT)
 
@@ -324,13 +247,8 @@ Expected execution log — see [OUTPUT/SYSOUT.txt](OUTPUT/SYSOUT.txt) for full o
 
 ## Notes
 
-- Program uses VSAM KSDS in RANDOM access mode — each transaction triggers a direct READ by key
-- Four independent FILE STATUS variables track VSAM, transactions, approved, and declined files
 - Current system date obtained via ACCEPT FROM DATE YYYYMMDD — no hardcoded dates
 - Expiry date stored in MMYY format (e.g. 1227 = December 2027) — positions 1:2 = MM, 3:2 = YY
-- Only last 2 digits of year (YY) used for expiry comparison — sufficient for near-future cards
 - Validation priority: NOT FOUND → BLOCKED → EXPIRED → APPROVED (first failing check wins)
 - FILE STATUS '23' is a soft error — card not found is a valid business outcome, not a fatal error
-- Both output files (APPROVED and DECLINED) deleted and recreated fresh each run via IEFBR14
-- TRANSACTION-AMOUNT uses PIC 9(5)V99 (implied decimal) — output formatted with $$$$ edit picture
 - Tested on IBM z/OS with Enterprise COBOL
