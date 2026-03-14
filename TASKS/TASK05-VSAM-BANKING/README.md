@@ -82,16 +82,12 @@ Updated balances after successful transactions.
 
 ### Transaction Processing Logic
 
-**Deposit (TRANS-TYPE = 'D'):**
-- NEW-BALANCE = ACCT-BAL + TRANS-AMOUNT
-- REWRITE updated record to VSAM
-
-**Withdrawal (TRANS-TYPE = 'W'):**
-- If ACCT-BAL >= TRANS-AMOUNT: subtract and REWRITE
-- If ACCT-BAL < TRANS-AMOUNT: write INSUFFICIENT FUNDS to error report
-
-**Account Not Found (ACCT-STATUS = '23'):**
-- Write ACCOUNT NOT FOUND to error report, continue processing
+| TRANS-TYPE | Condition | Action |
+|---|---|---|
+| D (Deposit) | Account found | ACCT-BAL = ACCT-BAL + TRANS-AMOUNT → REWRITE |
+| W (Withdrawal) | ACCT-BAL >= TRANS-AMOUNT | ACCT-BAL = ACCT-BAL − TRANS-AMOUNT → REWRITE |
+| W (Withdrawal) | ACCT-BAL < TRANS-AMOUNT | Write INSUFFICIENT FUNDS to ERROR-REPORT |
+| Any | FILE STATUS '23' | Write ACCOUNT NOT FOUND to ERROR-REPORT |
 
 **Examples:**
 - ACCT 10001, D, 500.00 → balance +500.00 (REWRITE)
@@ -102,29 +98,18 @@ Updated balances after successful transactions.
 ## Program Flow
 
 1. **Initialization**
-   - Opens ACCT.MASTER (VSAM KSDS) in I-O mode for random access
-   - Opens TRANS-FILE (PS) for sequential input
-   - Opens ERROR-REPORT (PS) for sequential output
+   - Opens ACCT.MASTER in I-O mode for random access, TRANS-FILE for sequential input, ERROR-REPORT for output
+   - Validates FILE STATUS '00' on each OPEN
 
 2. **Transaction Processing Loop**
-   - Reads transaction records sequentially from TRANS-FILE
-   - For each transaction:
-     - Performs random READ from VSAM using TRANS-ACCT as key
-     - If account found (FILE STATUS '00'):
-       - **Deposit (TRANS-TYPE = 'D')**: 
-         - Adds TRANS-AMOUNT to ACCT-BALANCE
-         - Rewrites updated record to VSAM
-       - **Withdrawal (TRANS-TYPE = 'W')**: 
-         - Validates sufficient funds (ACCT-BALANCE >= TRANS-AMOUNT)
-         - Subtracts TRANS-AMOUNT from ACCT-BALANCE
-         - Rewrites updated record to VSAM
-         - Writes error if insufficient funds
-     - If account not found (FILE STATUS '23'):
-       - Writes error message to ERROR-REPORT with account number
+   - Reads TRANS-FILE sequentially until EOF
+   - For each record: performs random READ on VSAM using TRANS-ACCT-ID as key
+   - FILE STATUS '00' → applies deposit or withdrawal logic, REWRITEs updated record
+   - FILE STATUS '23' → writes ACCOUNT NOT FOUND to ERROR-REPORT, continues to next record
+   - Withdrawal with insufficient funds → writes INSUFFICIENT FUNDS to ERROR-REPORT, skips REWRITE
 
 3. **Termination**
-   - Closes all files (VSAM, TRANS-FILE, ERROR-REPORT)
-   - Validates FILE STATUS after every file operation
+   - Closes all three files; validates FILE STATUS after each CLOSE
    - STOP RUN
 
 ## JCL Jobs
@@ -147,6 +132,8 @@ Standard compile-link-go JCL using MYCOMPGO procedure.
 - EMPDD - ACCT.MASTER (VSAM KSDS)
 - INDD - TRANS-FILE (PS)
 - REPDD - ERROR-REPORT (PS)
+
+**PROC reference:** [JCLPROC/MYCOMPGO.jcl](../../JCLPROC/MYCOMPGO.jcl)
 
 ## How to Run
 
@@ -196,29 +183,23 @@ Compare updated VSAM file content with expected results in [DATA/ACCT.MASTER.AFT
 
 ## Common Issues
 
-### Issue 1: FILE STATUS '92' or '93'
+### Issue 1: FILE STATUS '23' for all transactions
 
-**Cause:** VSAM file not defined or damaged  
-**Solution:** Re-run DEFKSDS.jcl
+**Cause:** Master file is empty or KEYS offset is wrong in DEFKSDS  
+**Solution:** Verify data loaded correctly; confirm KEYS(5 0) — key starts at byte 0
 
-### Issue 2: FILE STATUS '23' for all transactions
+### Issue 2: Abend S0C7 (Data Exception)
 
-**Cause:** Master file is empty or wrong key field  
-**Solution:** Verify data loaded correctly, check key offset
+**Cause:** Non-numeric data in ACCT-BAL or TRANS-AMOUNT (spaces, wrong offset)  
+**Solution:** Check input data — no spaces in numeric fields; verify record layout offsets match FD
 
-### Issue 3: Abend S0C7 (Data Exception)
+### Issue 3: FILE STATUS '92' on OPEN
 
-**Cause:** Non-numeric data in ACCT-BALANCE or TRANS-AMOUNT  
-**Solution:** Verify input data format (no spaces in numeric fields)
-
-### Issue 4: Wrong final balances
-
-**Cause:** Transaction file processed out of order  
-**Solution:** Verify transaction sequence in input file
+**Cause:** VSAM cluster not defined or previously damaged  
+**Solution:** Re-run DEFKSDS.jcl; check IDCAMS DEFINE output for errors
 
 ## Notes
 
-- Program uses random access mode for VSAM (not sequential)
-- Each transaction is independent - one failure doesn't affect others
-- VSAM file remains open throughout processing for performance
+- VSAM file stays open throughout the entire job — do not open/close per transaction
+- Each transaction is fully independent: one error does not stop processing of subsequent records
 - Tested on IBM z/OS with Enterprise COBOL
