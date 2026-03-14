@@ -163,7 +163,7 @@ Standard compile-link-go JCL using MYCOMPGO procedure.
 
 **Upload via ISPF 3.4**
 
-- Upload [DATA/PARAM.FILE.INPUT](DATA/PARAM.FILE.INPUT) to PS dataset manually via ISPF
+- Upload [DATA/PARAM.FILE.INPUT](DATA/PARAM.FILE.INPUT) to PS dataset manually via ISPF with exact record length (34 bytes)
 
 **Alternative:**
 1. Create PS file with LRECL=80 and insert inline data using IEBGENER:
