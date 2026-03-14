@@ -192,12 +192,7 @@ Standard compile-link-go JCL using MYCOMPGO procedure.
 
 ### Step 3: Allocate Daily Transactions File
 
-- Upload [DATA/TRANS.DAILY](DATA/TRANS.DAILY)
-
-**Alternative:**
-1. Create PS file with LRECL=80 and insert inline data using IEBGENER:
-- **⚠️ Note:** Inline DD * data is padded to 80 bytes. Verify FD includes FILLER to match LRECL/RECORDSIZE.
-2. Allocate PS file and insert exact length of your file transaction data using IEBGENER (see [JCL SAMPLES/DATA2PS.jcl](../../JCL%20SAMPLES/DATA2PS.jcl) for example)
+- Upload [DATA/TRANS.DAILY](DATA/TRANS.DAILY) to PS dataset manually via ISPF
 
 ### Step 4: Execute Validation Program
 
