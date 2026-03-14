@@ -111,12 +111,7 @@ Standard compile-link-go JCL using MYCOMPGO procedure.
 
 ### Step 1: Allocate and Load Sales Data File
 
-- Upload [DATA/SALES.DATA](DATA/SALES.DATA)
-
-**Alternative:**
-1. Create PS file with LRECL=80 and insert inline data using IEBGENER:
-- **⚠️ Note:** Inline DD * data is padded to 80 bytes. Verify FD includes FILLER to match LRECL/RECORDSIZE.
-2. Allocate PS file and insert exact length of your file data using IEBGENER (see [JCL SAMPLES/DATA2PS.jcl](../../JCL%20SAMPLES/DATA2PS.jcl) for example)
+- Upload [DATA/SALES.DATA](DATA/SALES.DATA) to PS dataset manually via ISPF
 
 ### Step 2: Execute Report Program
 
