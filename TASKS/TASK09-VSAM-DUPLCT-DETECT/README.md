@@ -17,17 +17,10 @@ Company performs periodic data quality checks on the client master database. The
 
 #### 1. CLIENT.MAST.VSAM (VSAM KSDS) - Client Master File
 
-**Access Mode:**
-- SEQUENTIAL (for full scan and sort input)
-
-**Organization:**
-- INDEXED (KSDS)
-
-**KEY:**
-- MAST-ID (PIC X(6))
-
-**Record Format:**
-- Fixed, LRECL=74
+**Access Mode:** SEQUENTIAL (for full scan and sort input)  
+**Organization:** INDEXED (KSDS)  
+**KEY:** MAST-ID (PIC X(6))  
+**Record Format:** Fixed, LRECL=74
 
 **Record Layout:**
 | Field | PIC | Offset | Description |
@@ -44,46 +37,11 @@ Company performs periodic data quality checks on the client master database. The
 
 #### 2. DUPLICATE-REPORT (PS) - Duplicate Client Report
 
-**Access Mode:**
-- OUTPUT (Sequential)
-
-**Organization:**
-- SEQUENTIAL
-
-**Record Format:**
-- Fixed Block (RECFM=FB, LRECL=80)
+**Access Mode:** OUTPUT (Sequential)  
+**Organization:** SEQUENTIAL  
+**Record Format:** Fixed Block (RECFM=FB, LRECL=80)  
 
 **Expected Output:** [DATA/DUPLCT.REPORT](DATA/DUPLCT.REPORT)
-
-### Duplicate Detection Logic
-
-**Duplicate Key:**
-- Two or more records are duplicates if they share the same MAST-NAME AND MAST-BIRTH
-
-**Sort Order:**
-- Primary: MAST-NAME ascending
-- Secondary: MAST-BIRTH ascending
-- Tertiary: MAST-ID ascending (for stable ordering within group)
-
-**Group Buffer:**
-- Maximum 50 records per group (WS-GROUP-TABLE OCCURS 50 TIMES)
-- If group exceeds 50 records, WARNING displayed to SYSOUT
-
-**Report Content:**
-- Only records belonging to groups with size > 1 are written
-- All members of a duplicate group are written together
-- No header line in report (detail lines only)
-
-**Examples:**
-- IVANOV IVAN, 19991201: IDs 000101, 000103, 000109 → 3 records (duplicate group)
-- PETROV PAVEL, 19880520: ID 000104 only → 1 record (unique, not written)
-- SMIRNOVA MARIA, 20010415: IDs 000105, 000108 → 2 records (duplicate group)
-- POPOVA ANNA, 19870305: IDs 000102, 000106, 000110 → 3 records (duplicate group)
-
-**Statistics:**
-- TOTAL RECORDS PROCESSED: total count of all records read
-- GROUPS WITH DUPLICATES: count of distinct name+birthdate groups with size > 1
-- SUSPICIOUS RECORDS FOUND: total count of all records written to report
 
 ### Error Handling
 
@@ -95,57 +53,54 @@ Company performs periodic data quality checks on the client master database. The
 - If group exceeds 50 records: WARNING displayed to SYSOUT, excess records skipped
 - Processing continues with next records
 
+### Duplicate Detection Logic
+
+**Duplicate Key:** Two or more records sharing the same MAST-NAME AND MAST-BIRTH
+
+**Sort Order:**
+- Primary: MAST-NAME ascending
+- Secondary: MAST-BIRTH ascending
+- Tertiary: MAST-ID ascending (stable ordering within group)
+
+**Report Content:** Only records belonging to groups with size > 1 are written; unique records are silently skipped
+
+**Examples:**
+- **IVANOV IVAN**, 19991201: IDs 000101, 000103, 000109 → 3 records (duplicate group)
+- **PETROV PAVEL**, 19880520: ID 000104 only → 1 record (unique, not written)
+- **SMIRNOVA MARIA**, 20010415: IDs 000105, 000108 → 2 records (duplicate group)
+- **POPOVA ANNA**, 19870305: IDs 000102, 000106, 000110 → 3 records (duplicate group)
+
+**Statistics displayed to SYSOUT:**
+- TOTAL RECORDS PROCESSED: total count of all records read
+- GROUPS WITH DUPLICATES: count of distinct name+birthdate groups with size > 1
+- SUSPICIOUS RECORDS FOUND: total count of all records written to report
+
 ## Program Flow
 
-1. **Initialization:**
-   - Opens DUPLICATE-REPORT-FILE (PS) for output
-   - Validates REP-STATUS = '00'
-   - Initializes all counters (TOTAL-REC, TOTAL-GROUPS, TOTAL-DUPS = 0)
+1. **Initialization**
+   - Opens DUPLICATE-REPORT-FILE; validates REP-STATUS = '00'
+   - Initializes counters: TOTAL-REC, TOTAL-GROUPS, TOTAL-DUPS = 0
 
-2. **SORT Statement:**
-   - SORT CLIENT-SORT-WORK ON ASCENDING KEY SRT-NAME, SRT-BIRTH, SRT-ID
-   - USING CLIENT-MASTER-FILE (reads all KSDS records into sort work)
-   - OUTPUT PROCEDURE IS PRCSS-SORT-REC THRU PROCESS-EXIT
+2. **SORT Statement**
+   - Sorts CLIENT-SORT-WORK ascending by SRT-NAME, SRT-BIRTH, SRT-ID
+   - USING CLIENT-MASTER-FILE reads all KSDS records into sort work
+   - OUTPUT PROCEDURE IS PRCSS-SORT-REC processes sorted records
 
 3. **Output Procedure: PRCSS-SORT-REC**
-   - RETURN first sorted record from CLIENT-SORT-WORK
-   - Sets WS-CUR-NAME and WS-CUR-BIRTH as current group key
-   - Increments TOTAL-REC 
-   - Performs ADD-TO-GROUP-BUFFER
-   - Loop UNTIL EOF:
-     - RETURN next sorted record
-     - Increments TOTAL-REC
-     - **IF SRT-NAME = WS-CUR-NAME AND SRT-BIRTH = WS-CUR-BIRTH:**
-       - Same group — performs ADD-TO-GROUP-BUFFER
-     - **ELSE:**
-       - Different group — performs WRITE-DUPLICATE-GROUP (flushes previous group)
-       - Updates WS-CUR-NAME and WS-CUR-BIRTH to new group key
-       - Resets WS-GROUP-COUNT to 0
-       - Performs ADD-TO-GROUP-BUFFER for first record of new group
-   - After loop ends: performs WRITE-DUPLICATE-GROUP (flushes last group)
-   - GO TO PROCESS-EXIT
+   - RETURNs first sorted record; sets WS-CUR-NAME and WS-CUR-BIRTH as group key
+   - Loop until EOF: RETURNs next record; if NAME+BIRTH match → ADD-TO-GROUP-BUFFER; else → WRITE-DUPLICATE-GROUP, reset group key, add first record of new group
+   - After loop: flushes last group via WRITE-DUPLICATE-GROUP
 
-4. **ADD-TO-GROUP-BUFFER:**
-   - Increments WS-GROUP-COUNT
-   - If WS-GROUP-COUNT <= 50: stores record fields in WS-GROUP-TABLE(WS-GROUP-COUNT)
-   - If WS-GROUP-COUNT > 50: displays buffer overflow warning
+4. **ADD-TO-GROUP-BUFFER**
+   - Increments WS-GROUP-COUNT; stores record in WS-GROUP-TABLE if count <= 50
+   - Displays buffer overflow warning if count > 50
 
-5. **WRITE-DUPLICATE-GROUP:**
-   - If WS-GROUP-COUNT > 1 (group has duplicates):
-     - Increments TOTAL-GROUPS
-     - Loops VARYING WS-INDEX FROM 1 TO WS-GROUP-COUNT:
-       - Initializes WS-REPORT-LINE
-       - Moves G-ID, G-NAME, G-BIRTH, G-PSSPRT to report line fields
-       - Writes REPORT-LINE to DUPLICATE-REPORT-FILE
-       - Validates REP-STATUS = '00'
-       - Increments TOTAL-DUPS
+5. **WRITE-DUPLICATE-GROUP**
+   - If WS-GROUP-COUNT > 1: increments TOTAL-GROUPS, writes all group records to report, increments TOTAL-DUPS per record
 
-6. **Termination:**
-   - Closes DUPLICATE-REPORT-FILE
-   - Validates REP-STATUS = '00'
-   - Performs DISPLAY-SUMMARY-REPORT
-   - Displays statistics banner to SYSOUT
-   - STOP RUN
+6. **Termination**
+   - Closes DUPLICATE-REPORT-FILE; validates REP-STATUS = '00'
+   - Displays statistics banner to SYSOUT; STOP RUN
 
 ## JCL Jobs
 
@@ -165,6 +120,8 @@ Standard compile-link-go JCL using MYCOMPGO procedure.
 - VSAMDD - CLIENT.MAST.VSAM (VSAM KSDS)
 - SRTDD - SORTWORK (sort work)
 - REPDD - DUPLCT.REPORT (output report)
+
+**PROC reference:** [JCLPROC/MYCOMPGO.jcl](../../JCLPROC/MYCOMPGO.jcl)
 
 ## How to Run
 
@@ -230,29 +187,13 @@ Check INPUT-VSAM data file for malformed records
 **Solution:** Verify VSAM records have correct layout — MAST-NAME starts at offset 7 (length 30), MAST-BIRTH at offset 37 (length 8)  
 Check that INPUT-VSAM data was loaded with correct LRECL=74
 
-### Issue 5: Wrong Record Count in Summary
-
-**Cause:** TOTAL-REC counter not incrementing for the very first record (before main loop starts)  
-**Solution:** Verify PRCSS-SORT-REC increments TOTAL-REC before the first ADD-TO-GROUP-BUFFER call and again inside the UNTIL EOF loop  
-Expected for 10-record test: TOTAL RECORDS PROCESSED = 10
-
-### Issue 6: Group Buffer Overflow Warning
-
-**Cause:** More than 50 records share the same NAME+BIRTH key (production data scenario)  
-**Solution:** For test data (max 3 per group) this should not occur  
-For production data increase buffer size: WS-GROUP-TABLE OCCURS 50 TIMES → OCCURS 200 TIMES
-
 ## Program Output (SYSOUT)
 
 Expected execution log - see [OUTPUT/SYSOUT.txt](OUTPUT/SYSOUT.txt) for full output example.
 
 ## Notes
 
-- Program uses COBOL SORT verb with OUTPUT PROCEDURE for in-memory group detection
-- GROUP BUFFER (OCCURS 50 TIMES) holds entire group before deciding to write or skip
-- Duplicate key is composite: NAME (30 chars) + BIRTHDATE (8 chars)
-- Sort tertiary key SRT-ID ensures stable ordering within duplicate groups
-- Unique records (group size = 1) are silently skipped, not written to report
-- VSAM KSDS accessed in SEQUENTIAL mode for full-file sort input
-- Sort work file (SRTDD) is temporary (NEW,DELETE,DELETE), recreated each run
+- COBOL SORT verb with OUTPUT PROCEDURE allows group detection on sorted stream without intermediate file
+- GROUP BUFFER (OCCURS 50 TIMES) holds the entire group before deciding to write or skip — required because group size is unknown until the next different key arrives
+- Duplicate key is composite: MAST-NAME (30 chars) + MAST-BIRTH (8 chars); records differing in any other field are still duplicates
 - Tested on IBM z/OS with Enterprise COBOL
