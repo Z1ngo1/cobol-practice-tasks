@@ -12,7 +12,7 @@ Company runs daily batch updates to its customer master file. Three types of tra
 - Produce a clean NEW.MASTER with all changes applied
 - Display processing summary to SYSOUT
 
-## Match-Merge Key Comparison Logic
+## Match-Merge Logic
 
 Both input files are read in parallel and exhausted using HIGH-VALUES as sentinel:
 
@@ -27,7 +27,9 @@ TRANS-ID < MASTER-ID  → transaction has no matching master record
                          read next transaction
 
 TRANS-ID = MASTER-ID  → transaction matches master record
-                         apply U/D/A logic
+                         'U': ADD TRNS-AMOUNT TO WS-CUR-BAL (multiple U accumulate)
+                         'D': set WS-DEL-FLAG = 'Y' (suppressed from output)
+                         'A': log error (duplicate — master already exists)
                          read next transaction
 ```
 
@@ -39,15 +41,9 @@ TRANS-ID = MASTER-ID  → transaction matches master record
 
 #### 1. OLD.MASTER (PS) - Current Customer Master File
 
-**Access Mode:**
-- INPUT (Sequential)
-
-**Organization:**
-- SEQUENTIAL
-
-**Record Format:**
-- Fixed (RECFM=F, LRECL=80)
-
+**Access Mode:** INPUT (Sequential)  
+**Organization:** SEQUENTIAL  
+**Record Format:** Fixed (RECFM=F, LRECL=80)  
 **Sort Requirement:** Pre-sorted ascending by OLD-ID (primary key)
 
 **Record Layout:**
@@ -62,15 +58,9 @@ TRANS-ID = MASTER-ID  → transaction matches master record
 
 #### 2. TRANS.FILE (PS) - Daily Transactions File
 
-**Access Mode:**
-- INPUT (Sequential)
-
-**Organization:**
-- SEQUENTIAL
-
-**Record Format:**
-- Fixed (RECFM=F, LRECL=80)
-
+**Access Mode:** INPUT (Sequential)  
+**Organization:** SEQUENTIAL  
+**Record Format:** Fixed (RECFM=F, LRECL=80)  
 **Sort Requirement:** Pre-sorted ascending by TRNS-ID (same key as master)
 
 **Record Layout:**
@@ -88,14 +78,9 @@ TRANS-ID = MASTER-ID  → transaction matches master record
 
 #### 3. NEW.MASTER (PS) - Updated Customer Master File
 
-**Access Mode:**
-- OUTPUT (Sequential)
-
-**Organization:**
-- SEQUENTIAL
-
-**Record Format:**
-- Fixed Block (RECFM=FB, LRECL=80)
+**Access Mode:** OUTPUT (Sequential)  
+**Organization:** SEQUENTIAL  
+**Record Format:** Fixed Block (RECFM=FB, LRECL=80)  
 
 **Record Layout:**
 | Field | PIC | Length | Description |
@@ -109,14 +94,9 @@ TRANS-ID = MASTER-ID  → transaction matches master record
 
 #### 4. ERROR.REPORT (PS) - Error Log File
 
-**Access Mode:**
-- OUTPUT (Sequential)
-
-**Organization:**
-- SEQUENTIAL
-
-**Record Format:**
-- Fixed Block (RECFM=FB, LRECL=80)
+**Access Mode:** OUTPUT (Sequential)  
+**Organization:** SEQUENTIAL  
+**Record Format:** Fixed Block (RECFM=FB, LRECL=80)  
 
 **Record Layout:**
 | Field | PIC | Length | Description |
@@ -129,89 +109,38 @@ TRANS-ID = MASTER-ID  → transaction matches master record
 
 **Expected Output:** [DATA/ERROR.REPORT](DATA/ERROR.REPORT)
 
-### Transaction Type Logic
+### Error Handling
 
-**'A' (ADD) — TRANS-ID < MASTER-ID (no matching master):**
-- Write new customer record to NEW.MASTER directly from transaction
-- NEW-ID = TRNS-ID, NEW-NAME = TRNS-DATA, NEW-BAL = TRNS-AMOUNT
-- Increment RECORDS-ADDED
-- If TRANS-ID = MASTER-ID and master exists → ADD is an error (duplicate), log to ERROR.REPORT
-
-**'U' (UPDATE) — TRANS-ID = MASTER-ID (match found):**
-- Add TRNS-AMOUNT to WS-CUR-BAL (accumulate in working storage)
-- Multiple UPDATE transactions for same ID are all applied before writing
-- Increment RECORDS-UPDATED per transaction
-- If no matching master (TRANS-ID < MASTER-ID) → error, log to ERROR.REPORT
-
-**'D' (DELETE) — TRANS-ID = MASTER-ID (match found):**
-- Set WS-DEL-FLAG = 'Y'
-- Record is suppressed in output (not written to NEW.MASTER)
-- Increment RECORDS-DELETED
-- If no matching master (TRANS-ID < MASTER-ID) → error, log to ERROR.REPORT
-
-### Error Conditions
-
+**Error Conditions (logged to ERROR.REPORT):**
 | Condition | Trans Type | Action |
 |---|---|---|
 | ADD but customer already exists | A with TRANS-ID = MASTER-ID | Log to ERROR.REPORT |
 | UPDATE but customer not found | U with TRANS-ID < MASTER-ID | Log to ERROR.REPORT |
 | DELETE but customer not found | D with TRANS-ID < MASTER-ID | Log to ERROR.REPORT |
 
-### File Status Variables
+**FILE STATUS Codes (all four files):**
+- 00 - Successful operation
+- Other codes - I/O errors on open, read, or write (program displays status and STOP RUN)
 
-**Four independent FILE STATUS variables:**
-- OLD-MASTER-STATUS — tracks OLD-MASTER-FILE reads
-- TRANS-STATUS — tracks TRANSACTIONS-FILE reads
-- NEW-MASTER-STATUS — tracks NEW-MASTER-FILE writes
-- ERROR-REPORT-STATUS — tracks ERROR-REPORT-FILE writes
-
-CLOSE errors are treated as warnings (display only, no STOP RUN).
+CLOSE errors treated as warnings (display only, no STOP RUN).
 
 ## Program Flow
 
-1. **Open Files: OPEN-ALL-FILES**
-   - Opens all four files, validates each FILE STATUS = '00'
+1. **Initialization**
+   - Opens all four files; validates FILE STATUS '00' on each
+   - Primes the loop: reads first OLD.MASTER record into WS-OLD-ID and WS-CUR-REC; reads first TRANS.FILE record into WS-TRNS-ID
 
-2. **Prime the Loop:**
-   - PERFORM READ-OLD-MASTER (loads first old master record into WS-OLD-ID and WS-CUR-REC)
-   - PERFORM READ-TRANSACTION (loads first transaction into WS-TRNS-ID)
+2. **Main Merge Loop**
+   - Repeats until BOTH WS-OLD-ID = HIGH-VALUES AND WS-TRNS-ID = HIGH-VALUES
+   - **TRNS-ID > OLD-ID:** writes current master to NEW.MASTER (if WS-DEL-FLAG = 'N'), resets flag, reads next master
+   - **TRNS-ID < OLD-ID:** if 'A' → writes new record to NEW.MASTER; if 'U' or 'D' → logs error; reads next transaction
+   - **TRNS-ID = OLD-ID:** applies transaction (U: ADD to WS-CUR-BAL; D: set WS-DEL-FLAG; A: log error as duplicate); reads next transaction
+   - AT END of either file: MOVE HIGH-VALUES to that file's ID to drain the other file
 
-3. **Main Loop: PROCESS-MERGE-LOGIC**
-   - PERFORM UNTIL WS-OLD-ID = HIGH-VALUES AND WS-TRNS-ID = HIGH-VALUES
-   - Each iteration calls PROCESS-MERGE-LOGIC once
-
-4. **Merge Decision: PROCESS-MERGE-LOGIC**
-   - EVALUATE TRUE:
-     - **TRNS-ID > OLD-ID:** perform WRITE-NEW-MASTER-REC, then READ-OLD-MASTER
-     - **TRNS-ID < OLD-ID:** perform PROCESS-UNMATCHED, then READ-TRANSACTION
-     - **TRNS-ID = OLD-ID:** perform APPLY-TRANSACTION, then READ-TRANSACTION
-
-5. **Write Master: WRITE-NEW-MASTER-REC**
-   - Only writes if WS-DEL-FLAG = 'N' AND WS-OLD-ID ≠ HIGH-VALUES
-   - Copies WS-CUR-ID, WS-CUR-NAME, WS-CUR-BAL to NEW-MASTER-REC
-   - Resets WS-DEL-FLAG = 'N' after every call
-
-6. **Unmatched Transaction: PROCESS-UNMATCHED**
-   - Guard: only processes if WS-TRNS-ID ≠ HIGH-VALUES
-   - If TRNS-ACT = 'A': write new record to NEW.MASTER, increment RECORDS-ADDED
-   - If TRNS-ACT = 'U' or 'D': perform LOG-ERROR-TRANSACTION
-
-7. **Apply Transaction: APPLY-TRANSACTION**
-   - 'U': ADD TRNS-AMOUNT TO WS-CUR-BAL, increment RECORDS-UPDATED
-   - 'D': MOVE 'Y' TO WS-DEL-FLAG, increment RECORDS-DELETED
-   - 'A': perform LOG-ERROR-TRANSACTION (duplicate add = error)
-
-8. **Read Old Master: READ-OLD-MASTER**
-   - AT END: MOVE HIGH-VALUES TO WS-OLD-ID (sentinel)
-   - NOT AT END: load OLD-ID into WS-OLD-ID, copy record to WS-CUR-REC, increment OLD-MASTER-READ
-
-9. **Read Transaction: READ-TRANSACTION**
-   - AT END: MOVE HIGH-VALUES TO WS-TRNS-ID (sentinel)
-   - NOT AT END: load TRNS-ID into WS-TRNS-ID, increment TRANS-READ
-
-10. **Close + Summary: CLOSE-ALL-FILES + DISPLAY-SUMMARY**
-    - Close all four files (warnings only on error)
-    - Display full summary to SYSOUT
+3. **Termination**
+   - Closes all four files (non-zero status on CLOSE is warning only)
+   - Displays summary to SYSOUT: OLD-MASTER-READ / TRANS-READ / RECORDS-ADDED / RECORDS-UPDATED / RECORDS-DELETED / ERRORS-LOGGED
+   - STOP RUN
 
 ## JCL Jobs
 
@@ -224,15 +153,27 @@ Standard compile-link-go JCL using MYCOMPGO procedure.
 - NEWDD: NEW.MASTER (updated master output)
 - REPDD: ERROR.REPORT (error log output)
 
+**PROC reference:** [JCLPROC/MYCOMPGO.jcl](../../JCLPROC/MYCOMPGO.jcl)
+
 ## How to Run
 
 ### Step 1: Allocate and Load Old Master File
 
 - Upload [DATA/OLD.MASTER](DATA/OLD.MASTER)
 
+**Alternative:**
+1. Create PS file with LRECL=80 and insert inline data using IEBGENER:
+- **⚠️ Note:** Inline DD * data is padded to 80 bytes. Verify FD includes FILLER to match LRECL/RECORDSIZE.
+2. Allocate PS file and insert exact length data using IEBGENER (see [JCL SAMPLES/DATA2PS.jcl](../../JCL%20SAMPLES/DATA2PS.jcl) for example)
+
 ### Step 2: Allocate and Load Transactions File
 
 - Upload [DATA/TRANS.FILE](DATA/TRANS.FILE)
+
+**Alternative:**
+1. Create PS file with LRECL=80 and insert inline data using IEBGENER:
+- **⚠️ Note:** Inline DD * data is padded to 80 bytes. Verify FD includes FILLER to match LRECL/RECORDSIZE.
+2. Allocate PS file and insert exact length data using IEBGENER (see [JCL SAMPLES/DATA2PS.jcl](../../JCL%20SAMPLES/DATA2PS.jcl) for example)
 
 ### Step 3: Execute Program
 
@@ -240,6 +181,11 @@ Standard compile-link-go JCL using MYCOMPGO procedure.
 **See** [OUTPUT/SYSOUT.txt](OUTPUT/SYSOUT.txt) for execution summary  
 **Review** [DATA/NEW.MASTER](DATA/NEW.MASTER) for expected new master output  
 **Review** [DATA/ERROR.REPORT](DATA/ERROR.REPORT) for expected error log
+
+**Alternative:**
+If you prefer to compile and run separately, use these jobs:
+- [JCL SAMPLES/JCLCOMP.jcl](../../JCL%20SAMPLES/JCLCOMP.jcl)
+- [JCL SAMPLES/JCLRUN.jcl](../../JCL%20SAMPLES/JCLRUN.jcl)
 
 ### Step 4: Verify Results
 
@@ -250,46 +196,20 @@ Standard compile-link-go JCL using MYCOMPGO procedure.
 
 ## Common Issues
 
-### Issue 1: Infinite Loop
+### Issue 1: Output Files Not Allocated
 
-**Cause:** HIGH-VALUES sentinel not set on AT END, or loop condition checks only one file
-**Solution:** Verify READ-OLD-MASTER and READ-TRANSACTION both MOVE HIGH-VALUES to their respective WS-xxx-ID on AT END
-Confirm loop condition: UNTIL WS-OLD-ID = HIGH-VALUES AND WS-TRNS-ID = HIGH-VALUES (both must be exhausted)
+**Cause:** IEFBR14 delete step failed for NEW.MASTER or ERROR.REPORT, or DSN mismatch
+**Solution:** Verify delete step RC=0 for both output files; confirm NEWDD and REPDD DD statements present in COMPRUN.jcl
 
-### Issue 2: Records Duplicated or Missing in New Master
-
-**Cause:** WRITE-NEW-MASTER-REC called at wrong point in merge — writing before all transactions for that ID are applied
-**Solution:** For TRNS-ID = MASTER-ID: only READ-TRANSACTION after APPLY-TRANSACTION, do NOT yet call WRITE-NEW-MASTER-REC
-Master is only written when TRNS-ID > MASTER-ID (next master record is needed)
-
-### Issue 3: WS-DEL-FLAG Not Reset
-
-**Cause:** Delete flag remains 'Y' after deleted record, suppresses next valid record
-**Solution:** Verify MOVE 'N' TO WS-DEL-FLAG is at the END of WRITE-NEW-MASTER-REC (executes whether record was written or skipped)
-
-### Issue 4: Multiple Updates Not Accumulated
-
-**Cause:** WS-CUR-BAL overwritten instead of incremented between multiple U transactions for same ID
-**Solution:** Verify APPLY-TRANSACTION uses ADD TRNS-AMOUNT TO WS-CUR-BAL (not MOVE)
-When TRANS-ID = MASTER-ID and multiple updates exist: READ-TRANSACTION loops back, same master record in WS-CUR-REC accumulates each delta
-
-### Issue 5: Error Count Wrong
-
-**Cause:** LOG-ERROR-TRANSACTION called for wrong conditions or missed
-**Solution:** Verify three error cases: (1) A when TRNS-ID = MASTER-ID, (2) U when TRNS-ID < MASTER-ID, (3) D when TRNS-ID < MASTER-ID
-Expected for test data: ERRORS-LOGGED = 3
-
-### Issue 6: Files Not Sorted
+### Issue 2: Files Not Sorted
 
 **Cause:** Input files not sorted — match-merge produces wrong results silently
-**Solution:** Verify OLD.MASTER sorted ascending by bytes 1–5 (OLD-ID) and TRANS.FILE sorted ascending by bytes 1–5 (TRNS-ID)
-Use DFSORT SORT FIELDS=(1,5,CH,A) on both input files before running PSTASK13
+**Solution:** Verify OLD.MASTER sorted ascending by bytes 1–5 (OLD-ID) and TRANS.FILE sorted ascending by bytes 1–5 (TRNS-ID); use DFSORT SORT FIELDS=(1,5,CH,A) on both input files if needed
 
-### Issue 7: Abend S0C7 (Data Exception)
+### Issue 3: Abend S0C7 (Data Exception)
 
 **Cause:** Non-numeric OLD-BAL or TRNS-AMOUNT in input files
-**Solution:** Verify OLD-MASTER-INPUT OLD-BAL is 7 numeric digits at offset 25
-Check TRANS-FILE-INPUT TRNS-AMOUNT is 7 numeric digits at offset 26 (after 5-char ID + 1-char ACT + 20-char DATA)
+**Solution:** Verify OLD-BAL is 7 numeric digits at offset 25; confirm TRNS-AMOUNT is 7 numeric digits at offset 26 (5+1+20=26)
 
 ## Program Output (SYSOUT)
 
@@ -299,9 +219,6 @@ Expected execution log — see [OUTPUT/SYSOUT.txt](OUTPUT/SYSOUT.txt) for full o
 
 - Both input files MUST be pre-sorted by the same key (customer ID) — no internal sorting
 - HIGH-VALUES sentinel strategy: when either file reaches EOF, its ID is set to X'FFFFFF...' (highest possible value), ensuring the other file continues to drain correctly
-- WS-CUR-REC working storage record accumulates all UPDATE deltas before being written — supports multiple U transactions per customer ID
-- WS-DEL-FLAG controls write suppression — reset unconditionally after each WRITE-NEW-MASTER-REC call
+- Multiple U transactions for the same customer ID all accumulate into WS-CUR-BAL before the master record is written
 - Error records written to ERROR.REPORT preserve full transaction layout for audit trail
-- Four independent FILE STATUS variables for precise error identification
-- No VSAM, no DB2 — pure sequential PS-to-PS batch processing (classic mainframe batch pattern)
 - Tested on IBM z/OS with Enterprise COBOL
