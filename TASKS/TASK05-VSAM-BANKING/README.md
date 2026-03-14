@@ -133,7 +133,7 @@ Standard compile-link-go JCL using MYCOMPGO procedure.
 - INDD - TRANS-FILE (PS)
 - REPDD - ERROR-REPORT (PS)
 
-**PROC reference:** [JCLPROC/MYCOMPGO.jcl](../../JCLPROC/MYCOMPGO.jcl)
+**PROC reference:** [JCLRPOC/MYCOMPGO.jcl](../../JCLRPOC/MYCOMPGO.jcl)
 
 ## How to Run
 
