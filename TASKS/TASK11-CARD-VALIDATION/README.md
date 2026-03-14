@@ -204,7 +204,12 @@ Standard compile-link-go JCL using MYCOMPGO procedure.
 **Submit** [JCL/COMPRUN.jcl](JCL/COMPRUN.jcl)  
 **See** [OUTPUT/SYSOUT.txt](OUTPUT/SYSOUT.txt) for execution summary and date display  
 **Review** [DATA/APPROVED.FILE](DATA/APPROVED.FILE) — should contain 2 approved transactions  
-**Review** [DATA/DECLINED.FILE](DATA/DECLINED.FILE) — should contain 7 declined transactions  
+**Review** [DATA/DECLINED.FILE](DATA/DECLINED.FILE) — should contain 7 declined transactions
+
+**Alternative:**
+If you prefer to compile and run separately, use these jobs:
+- [JCL SAMPLES/JCLCOMP.jcl](../../JCL%20SAMPLES/JCLCOMP.jcl)
+- [JCL SAMPLES/JCLRUN.jcl](../../JCL%20SAMPLES/JCLRUN.jcl)
 
 ### Step 5: Verify Results
 
