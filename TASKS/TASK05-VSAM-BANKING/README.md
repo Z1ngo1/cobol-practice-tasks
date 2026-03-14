@@ -172,7 +172,7 @@ Standard compile-link-go JCL using MYCOMPGO procedure.
 
 **Manual upload**
 
-Upload [DATA/TRANS.FILE.INPUT](DATA/TRANS.FILE.INPUT) to PS dataset manually via ISPF
+Upload [DATA/TRANS.FILE.INPUT](DATA/TRANS.FILE.INPUT) to PS dataset manually via ISPF with exact record length (32 bytes)
 
 **Alternative:**
 1. Create PS file with LRECL=80 and insert inline data using IEBGENER:
