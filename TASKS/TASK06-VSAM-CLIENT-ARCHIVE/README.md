@@ -33,12 +33,9 @@ A company needs to archive and remove inactive client records from the master da
 
 #### 2. PARAM-FILE (PS) - Cutoff Date Parameter
 
-**Access Mode:** 
-- INPUT (Sequential)
-**Organization:**
-- SEQUENTIAL
-**Record Format:**
-- Fixed (RECFM=F, LRECL=80)
+**Access Mode:** INPUT (Sequential)  
+**Organization:** SEQUENTIAL  
+**Record Format:** Fixed (RECFM=F, LRECL=80)  
 
 **Record Layout:**
 | Field | PIC | Length | Description |
@@ -54,12 +51,9 @@ A company needs to archive and remove inactive client records from the master da
 
 #### 3. ARCHIVE-OLD (PS) - Archived Clients
 
-**Access Mode:** 
-- OUTPUT (Sequential)
-**Organization:**
-- SEQUENTIAL
-**Record Format:**
-- Fixed (RECFM=F, LRECL=80)
+**Access Mode:** OUTPUT (Sequential)  
+**Organization:** SEQUENTIAL  
+**Record Format:** Fixed (RECFM=F, LRECL=80)  
 
 **Record Layout:**
 | Field | PIC | Length | Description |
@@ -95,9 +89,9 @@ Active clients remaining after deletion of archived records.
 **Cutoff Date:** 20231231 (December 31, 2023)
 
 **Examples:**
-- 20230115 (Jan 15, 2023) <= 20231231 → INACTIVE (archive and delete)
-- 20231231 (Dec 31, 2023) <= 20231231 → INACTIVE (archive and delete)
-- 20240310 (Mar 10, 2024) > 20231231 → ACTIVE (keep in master)
+- **20230115** (Jan 15, 2023) — INACTIVE: archive and delete
+- **20231231** (Dec 31, 2023) — INACTIVE: archive and delete  
+- **20240310** (Mar 10, 2024) — ACTIVE: keep in master
 
 ## Program Flow
 
