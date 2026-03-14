@@ -80,15 +80,6 @@ Active clients remaining after deletion of archived records.
 
 **Expected Final State:** [DATA/CLIENT.MASTER.AFTER](DATA/CLIENT.MASTER.AFTER)
 
-### Cutoff Date Logic
-
-**Cutoff Date:** 20231231 (December 31, 2023)
-
-**Examples:**
-- 20230115 (Jan 15, 2023) <= 20231231 → INACTIVE (archive and delete)
-- 20231231 (Dec 31, 2023) <= 20231231 → INACTIVE (archive and delete)
-- 20240310 (Mar 10, 2024) > 20231231 → ACTIVE (keep in master)
-
 ### Error Handling
 
 **FILE STATUS Codes:**
@@ -97,53 +88,41 @@ Active clients remaining after deletion of archived records.
 - 92 - Logic error (file not opened or wrong access mode)
 - Other codes - I/O errors (program stops with error message)
 
+### Cutoff Date Logic
+
+| CLIENT-LAST-DATE | Condition | Action |
+|---|---|---|
+| <= CUTOFF-DATE | Inactive | Write to ARCHIVE-OLD, DELETE from VSAM |
+| > CUTOFF-DATE | Active | Keep in CLIENT-FILE, no action |
+
+**Cutoff Date:** 20231231 (December 31, 2023)
+
+**Examples:**
+- 20230115 (Jan 15, 2023) <= 20231231 → INACTIVE (archive and delete)
+- 20231231 (Dec 31, 2023) <= 20231231 → INACTIVE (archive and delete)
+- 20240310 (Mar 10, 2024) > 20231231 → ACTIVE (keep in master)
+
 ## Program Flow
 
 1. **Initialization**
-   - Opens CLIENT-FILE (VSAM KSDS) in I-O mode with DYNAMIC access
-   - Opens PARAM-FILE (PS) for sequential input
-   - Opens ARCH-FILE (PS) for sequential output
-   - Initializes counters (REC-READ, REC-DELETE, REC-KEPT)
-   - Validates FILE STATUS for all OPEN operations ('00' = success)
+   - Opens CLIENT-FILE (I-O, DYNAMIC), PARAM-FILE (INPUT), ARCH-FILE (OUTPUT)
+   - Reads single record from PARAM-FILE, extracts WS-CUTOFF-DATE, displays to SYSOUT
+   - Closes PARAM-FILE; initializes REC-READ, REC-DELETE, REC-KEPT counters
 
-2. **Read Cutoff Date Parameter**
-   - Reads single record from PARAM-FILE
-   - Extracts PARAM-DATE (8 bytes in YYYYMMDD format)
-   - Moves to WS-CUTOFF-DATE working storage variable
-   - Displays cutoff date to SYSOUT for verification
-   - Closes PARAM-FILE
-
-3. **Position VSAM for Sequential Processing**
+2. **Position VSAM for Sequential Read**
    - Moves LOW-VALUES to CLIENT-ID
-   - Executes START CLIENT-FILE KEY IS NOT LESS THAN CLIENT-ID
-   - Positions file pointer at first record in key sequence
-   - Handles FILE STATUS '23' (empty file) gracefully
+   - Executes START KEY NOT LESS THAN CLIENT-ID to position at first record
+   - FILE STATUS '23' (empty file) handled gracefully
 
-4. **Sequential Read and Process Loop**
-   - Performs READ NEXT until end of file (EOF)
-   - For each CLIENT-REC read:
-     - Increments REC-READ counter
-     - Compares CLIENT-LAST-DATE with WS-CUTOFF-DATE
-     - **If CLIENT-LAST-DATE <= WS-CUTOFF-DATE (inactive client)**:
-       - Writes CLIENT-REC to ARCH-FILE (sequential write)
-       - Validates ARCH-STATUS = '00'
-       - Deletes current record from VSAM using DELETE statement
-       - Validates CLIENT-STATUS = '00' after DELETE
-       - Increments REC-DELETE counter
-       - Displays "ARCH AND DELETE: {CLIENT-ID}" to SYSOUT
-     - **If CLIENT-LAST-DATE > WS-CUTOFF-DATE (active client)**:
-       - Keeps record in VSAM (no action)
-       - Increments REC-KEPT counter
-   - READ NEXT automatically advances to next record after DELETE
+3. **Sequential Read and Process Loop**
+   - Performs READ NEXT until EOF; increments REC-READ per record
+   - CLIENT-LAST-DATE <= WS-CUTOFF-DATE: writes to ARCH-FILE, DELETEs from VSAM, increments REC-DELETE, displays "ARCH AND DELETE: {CLIENT-ID}"
+   - CLIENT-LAST-DATE > WS-CUTOFF-DATE: no action, increments REC-KEPT
+   - After DELETE, next READ NEXT automatically advances to the following record
 
-5. **Termination**
-   - Closes CLIENT-FILE and ARCH-FILE
-   - Validates FILE STATUS for CLOSE operations
-   - Formats counters with edited picture (Z(4)9) to suppress leading zeros
-   - Displays statistics report to SYSOUT:
-     - RECORDS READ: total records processed
-     - RECORDS DELETE: clients archived and removed
-     - RECORDS KEPT: active clients remaining
+4. **Termination**
+   - Closes CLIENT-FILE and ARCH-FILE; validates FILE STATUS on each CLOSE
+   - Displays summary to SYSOUT: RECORDS READ / RECORDS DELETE / RECORDS KEPT
    - STOP RUN
 
 ## JCL Jobs
@@ -166,6 +145,8 @@ Standard compile-link-go JCL using MYCOMPGO procedure.
 - CLTDD - CLIENT-FILE (VSAM KSDS)
 - INDD - PARAM-FILE (PS with cutoff date)
 - OUTDD - ARCH-FILE (PS for archived records)
+
+**PROC reference:** [JCLPROC/MYCOMPGO.jcl](../../JCLPROC/MYCOMPGO.jcl)
 
 ## How to Run
 
@@ -220,28 +201,18 @@ If you prefer to compile and run separately, use these jobs:
 
 ### Issue 1: FILE STATUS '92' on DELETE
 
-**Cause:** File opened in INPUT mode instead of I-O, or wrong access mode (not DYNAMIC)  
-**Solution:** Verify SELECT statement uses ACCESS MODE IS DYNAMIC and OPEN I-O
+**Cause:** File opened in INPUT mode instead of I-O, or ACCESS MODE is not DYNAMIC  
+**Solution:** Verify SELECT uses ACCESS MODE IS DYNAMIC and file is opened with OPEN I-O
 
 ### Issue 2: All records deleted or none deleted
 
-**Cause:** Wrong date comparison logic or CUTOFF-DATE format mismatch  
-**Solution:** Verify YYYYMMDD format in PARAM-FILE, check <= vs < logic, verify WS-CUTOFF-DATE displays correctly
+**Cause:** Wrong date comparison or CUTOFF-DATE format mismatch  
+**Solution:** Verify YYYYMMDD format in PARAM-FILE; check WS-CUTOFF-DATE displays correctly in SYSOUT; confirm <= logic
 
 ### Issue 3: ERROR: PARAM FILE IS EMPTY OR UNREADABLE
 
 **Cause:** PARAM-FILE not allocated or empty  
-**Solution:** Create PARAM-FILE with cutoff date, verify LRECL=80, ensure first 8 bytes contain valid date
-
-### Issue 4: START FAILED STATUS
-
-**Cause:** VSAM file empty or not opened correctly  
-**Solution:** Verify VSAM file contains data, check OPEN I-O succeeded (CLIENT-STATUS = '00')
-
-### Issue 5: Records archived but not deleted
-
-**Cause:** DELETE statement failed silently  
-**Solution:** Check FILE STATUS after DELETE, verify CLIENT-STATUS = '00', review SYSOUT for error messages
+**Solution:** Verify PARAM-FILE exists with LRECL=80 and first 8 bytes contain a valid YYYYMMDD date
 
 ## Program Output (SYSOUT)
 
@@ -251,6 +222,4 @@ Expected execution log - see [OUTPUT/SYSOUT.txt](OUTPUT/SYSOUT.txt) for full out
 
 - Program uses DYNAMIC access mode (allows both sequential READ NEXT and random DELETE operations)
 - Date comparison uses <= (less than or equal) - records with exact cutoff date are also archived
-- After DELETE, next READ NEXT automatically advances to the following record
-- Archive file written sequentially in key order
 - Tested on IBM z/OS with Enterprise COBOL
