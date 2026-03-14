@@ -18,12 +18,9 @@ A company needs to archive and remove inactive client records from the master da
 
 #### 1. CLIENT-MASTER (VSAM KSDS) - Client Master File
 
-**Access Mode:** 
-- INPUT-OUTPUT (Dynamic)
-**Organization:**
-- INDEXED (KSDS)
-**Key:**
-- CLIENT-ID (6 characters, positions 1-6)
+**Access Mode:** INPUT-OUTPUT (Dynamic)  
+**Organization:** INDEXED (KSDS)  
+**Key:** CLIENT-ID (6 characters, positions 1-6)  
 
 **Record Layout:**
 | Field | PIC | Length | Description |
