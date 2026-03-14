@@ -139,7 +139,7 @@ Standard compile-link-go JCL using MYCOMPGO procedure.
 
 ### Step 1: Define VSAM Cluster
 
-**Submit** [DEFKSDS.jcl](JCL/DEFKSDS.jcl)
+**Submit** [DEFKSDS.jcl](JCL/DEFKSDS.jcl)  
 **Verify:** IDCAMS completes RC=0, cluster defined
 
 ### Step 2: Load Product Master Data
@@ -158,11 +158,6 @@ Standard compile-link-go JCL using MYCOMPGO procedure.
 ### Step 3: Allocate Daily Orders File
 
 - Upload [DATA/ORDERS.DAILY](DATA/ORDERS.DAILY) to PS dataset manually via ISPF
-
-**Alternative:**
-1. Create PS file with LRECL=80 and insert inline data using IEBGENER:
-- **⚠️ Note:** Inline DD * data is padded to 80 bytes. Verify FD includes FILLER to match LRECL/RECORDSIZE.
-2. Allocate PS file and insert exact length of your file transaction data using IEBGENER (see [JCL SAMPLES/DATA2PS.jcl](../../JCL%20SAMPLES/DATA2PS.jcl) for example)
 
 ### Step 4: Execute Program
 
