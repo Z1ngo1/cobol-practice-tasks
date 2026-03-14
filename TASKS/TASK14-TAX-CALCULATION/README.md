@@ -85,8 +85,9 @@ PHASE 2 - PROCESSING (per employee):
 
 ### Error Handling
 
-**FILE STATUS Codes (all three files):**
+**FILE STATUS Codes (TAX.RATES, EMP.SALARY, PAYROLL.TXT):**
 - 00 - Successful operation
+- 35 - File not found on OPEN (program displays status and STOP RUN)
 - Other codes - I/O errors on open, read, or write (program displays status and STOP RUN)
 
 CLOSE errors treated as warnings (display only, no STOP RUN).
