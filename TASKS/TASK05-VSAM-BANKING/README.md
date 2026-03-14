@@ -90,10 +90,10 @@ Updated balances after successful transactions.
 | Any | FILE STATUS '23' | Write ACCOUNT NOT FOUND to ERROR-REPORT |
 
 **Examples:**
-- ACCT 10001, D, 500.00 → balance +500.00 (REWRITE)
-- ACCT 10002, W, 200.00, balance 1000.00 → balance 800.00 (REWRITE)
-- ACCT 10003, W, 9999.00, balance 500.00 → INSUFFICIENT FUNDS (error)
-- ACCT 99999, D, 100.00 → ACCOUNT NOT FOUND (error)
+- **ACCT 10001**, D, 500.00 — balance +500.00 (REWRITE)
+- **ACCT 10002**, W, 200.00, balance 1000.00 — balance 800.00 (REWRITE)
+- **ACCT 10003**, W, 9999.00, balance 500.00 — INSUFFICIENT FUNDS (error)
+- **ACCT 99999**, D, 100.00 — ACCOUNT NOT FOUND (error)
 
 ## Program Flow
 
