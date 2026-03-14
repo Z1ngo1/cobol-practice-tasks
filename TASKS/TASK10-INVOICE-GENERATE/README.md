@@ -166,9 +166,9 @@ Standard compile-link-go JCL using MYCOMPGO procedure.
 
 ### Step 4: Execute Program
 
-**Submit** [JCL/COMPRUN.jcl](JCL/COMPRUN.jcl)
-**See** [OUTPUT/SYSOUT.txt](OUTPUT/SYSOUT.txt) for execution summary and error messages
-**Review** [DATA/INVOICE.FILE](DATA/INVOICE.FILE) for expected invoice output
+**Submit** [JCL/COMPRUN.jcl](JCL/COMPRUN.jcl)  
+**See** [OUTPUT/SYSOUT.txt](OUTPUT/SYSOUT.txt) for execution summary and error messages  
+**Review** [DATA/INVOICE.FILE](DATA/INVOICE.FILE) for expected invoice output  
 
 **Alternative:**
 If you prefer to compile and run separately, use these jobs:  
