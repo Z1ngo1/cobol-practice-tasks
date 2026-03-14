@@ -16,9 +16,9 @@ A bank needs to process daily transactions (deposits and withdrawals) against cu
 
 #### 1. ACCT.MASTER (VSAM KSDS) - Account Master File
 
-**Access Mode:** INPUT-OUTPUT (Random)
-**Organization:** INDEXED (KSDS)
-**Key:** ACCT-NUM (5 characters, positions 1-5)
+**Access Mode:** INPUT-OUTPUT (Random)  
+**Organization:** INDEXED (KSDS)  
+**Key:** ACCT-NUM (5 characters, positions 1-5)  
 
 **Record Layout:**
 | Field | PIC | Length | Description |
