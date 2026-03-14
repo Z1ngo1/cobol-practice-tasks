@@ -17,17 +17,10 @@ Company processes daily customer orders and generates invoices with full product
 
 #### 1. PROD.MASTER.VSAM (VSAM KSDS) - Product Master File
 
-**Access Mode:**
-- RANDOM (direct lookup by PRODUCT-ID key)
-
-**Organization:**
-- INDEXED (KSDS)
-
-**KEY:** 
-- PRODUCT-ID (PIC X(5))
-
-**Record Format:**
-- Fixed, LRECL=32
+**Access Mode:** RANDOM (direct lookup by PRODUCT-ID key)  
+**Organization:** INDEXED (KSDS)  
+**KEY:** PRODUCT-ID (PIC X(5))  
+**Record Format:** Fixed, LRECL=32  
 
 **Record Layout:**
 | Field | PIC | Length | Description |
@@ -40,14 +33,9 @@ Company processes daily customer orders and generates invoices with full product
 
 #### 2. ORDERS.DAILY (PS) - Daily Orders File
 
-**Access Mode:**
-- INPUT (Sequential)
-
-**Organization:**
-- SEQUENTIAL
-
-**Record Format:**
-- Fixed (RECFM=F, LRECL=80)
+**Access Mode:** INPUT (Sequential)  
+**Organization:** SEQUENTIAL  
+**Record Format:** Fixed (RECFM=F, LRECL=80)
 
 **Record Layout:**
 | Field | PIC | Length | Description |
@@ -63,14 +51,9 @@ Company processes daily customer orders and generates invoices with full product
 
 #### 3. INVOICE.FILE (PS) - Invoice Output File
 
-**Access Mode:**
-- OUTPUT (Sequential)
-
-**Organization:**
-- SEQUENTIAL
-
-**Record Format:**
-- Fixed Block (RECFM=FB, LRECL=80)
+**Access Mode:** OUTPUT (Sequential)  
+**Organization:** SEQUENTIAL  
+**Record Format:** Fixed Block (RECFM=FB, LRECL=80)  
 
 **Record Layout:**
 | Field | PIC | Length | Description |
@@ -86,33 +69,6 @@ Company processes daily customer orders and generates invoices with full product
 
 **Expected Output:** [DATA/INVOICE.FILE](DATA/INVOICE.FILE)
 
-### Invoice Calculation Logic
-
-**Formula:**
-- TOTAL-COST = ORDER-QUANTITY × UNIT-PRICE
-
-**Product Found (VSAM-STATUS = '00'):**
-- Calculate TOTAL-COST
-- Write enriched invoice line with PRODUCT-NAME and TOTAL-COST
-- Increment TOTAL-INVOICES counter
-
-**Product Not Found (VSAM-STATUS = '23'):**
-- Display: ORDER {ORDER-ID}: PRODUCT {PRODUCT-ID} NOT FOUND.
-- Increment TOTAL-ERRORS counter
-- Skip invoice line — no output record written
-
-**Other VSAM Error (any other status):**
-- Display: VSAM READ ERROR: {status}
-- Increment TOTAL-ERRORS counter
-- STOP RUN
-
-**Examples:**
-- ORDER 10001, PRODUCT 00100 (APPLE GREEN), QTY 010 → 010 × 20.50 = 205.00 (written)
-- ORDER 10005, PRODUCT 00500 (MILK WHOLE), QTY 050 → 050 × 22.50 = 1125.00 (written)
-- ORDER 10006, PRODUCT 99999, QTY 001 → NOT FOUND, error logged, skipped
-- ORDER 10010, PRODUCT 88888, QTY 003 → NOT FOUND, error logged, skipped
-- ORDER 10007, PRODUCT 00600 (LAPTOP DELL), QTY 002 → 002 × 12000.00 = 24000.00 (written)
-
 ### Error Handling
 
 **FILE STATUS Codes (VSAM - PRODUCT-MASTER-FILE):**
@@ -125,43 +81,38 @@ Company processes daily customer orders and generates invoices with full product
 - 00 - Successful operation
 - Other codes - I/O errors (program displays error and stops)
 
+### Invoice Calculation Logic
+
+| VSAM-STATUS | Condition | Action |
+|---|---|---|
+| '00' | Product found | TOTAL-COST = QUANTITY × UNIT-PRICE → write invoice line |
+| '23' | Product not found | Log error to SYSOUT, skip order, increment TOTAL-ERRORS |
+| Other | VSAM I/O error | Display error, STOP RUN |
+
+**Examples:**
+- **ORDER 10001**, PRODUCT 00100 (APPLE GREEN), QTY 010 → 010 × 20.50 = 205.00 (written)
+- **ORDER 10005**, PRODUCT 00500 (MILK WHOLE), QTY 050 → 050 × 22.50 = 1125.00 (written)
+- **ORDER 10006**, PRODUCT 99999, QTY 001 → NOT FOUND, error logged, skipped
+- **ORDER 10010**, PRODUCT 88888, QTY 003 → NOT FOUND, error logged, skipped
+- **ORDER 10007**, PRODUCT 00600 (LAPTOP DELL), QTY 002 → 002 × 12000.00 = 24000.00 (written)
+
 ## Program Flow
 
-1. **Initialization: OPEN-ALL-FILES**
-   - Opens PRODUCT-MASTER-FILE (VSAM KSDS, INPUT, RANDOM)
-   - Validates VSAM-STATUS = '00'
-   - Opens DAILY-ORDERS-FILE (PS, INPUT)
-   - Validates ORDERS-STATUS = '00'
-   - Opens INVOICE-OUTPUT-FILE (PS, OUTPUT)
-   - Validates OUT-STATUS = '00'
+1. **Initialization**
+   - Opens PRODUCT-MASTER-FILE (VSAM, INPUT, RANDOM), DAILY-ORDERS-FILE (INPUT), INVOICE-OUTPUT-FILE (OUTPUT)
+   - Validates FILE STATUS '00' on each OPEN
 
-2. **Main Loop: PROCESS-ORDERS**
-   - Loop PERFORM UNTIL EOF:
-     - READ DAILY-ORDERS-FILE AT END SET EOF TO TRUE
-     - If ORDERS-STATUS = '00': increment TOTAL-ORDERS, perform PROCESS-ORDER
-     - If ORDERS-STATUS ≠ '00': display error, STOP RUN
+2. **Main Processing Loop**
+   - Reads DAILY-ORDERS-FILE sequentially until EOF; increments TOTAL-ORDERS per record
+   - For each order: MOVEs ORDER-PRODUCT-ID to PRODUCT-ID, executes random READ on VSAM
+   - FILE STATUS '00' → calculates TOTAL-COST = UNIT-PRICE × ORDER-QUANTITY, writes invoice line, increments TOTAL-INVOICES
+   - FILE STATUS '23' → displays NOT FOUND message, increments TOTAL-ERRORS, continues
+   - Other status → displays VSAM READ ERROR, STOP RUN
 
-3. **Single Order Processing: PROCESS-ORDER**
-   - MOVE ORDER-PRODUCT-ID TO PRODUCT-ID (set VSAM key)
-   - READ PRODUCT-MASTER-FILE (random lookup)
-   - EVALUATE VSAM-STATUS:
-     - **'00'**: perform WRITE-INVOICE-LINE
-     - **'23'**: display NOT FOUND message, increment TOTAL-ERRORS
-     - **OTHER**: display VSAM READ ERROR, increment TOTAL-ERRORS, STOP RUN
-
-4. **Write Invoice: WRITE-INVOICE-LINE**
-   - COMPUTE CALC-TOTAL-COST = UNIT-PRICE × ORDER-QUANTITY
-   - Move ORDER-ID, PRODUCT-NAME, ORDER-QUANTITY, CALC-TOTAL-COST to OUT-REC
-   - WRITE OUT-REC
-   - Validate OUT-STATUS = '00'
-   - Increment TOTAL-INVOICES
-
-5. **Termination: CLOSE-ALL-FILES + DISPLAY-SUMMARY**
-   - Close all three files with status validation
-   - Display summary banner to SYSOUT:
-     - TOTAL ORDERS PROCESSED
-     - TOTAL INVOICES CREATED
-     - TOTAL ERRORS
+3. **Termination**
+   - Closes all three files with status validation
+   - Displays summary to SYSOUT: TOTAL ORDERS / TOTAL INVOICES CREATED / TOTAL ERRORS
+   - STOP RUN
 
 ## JCL Jobs
 
@@ -181,6 +132,8 @@ Standard compile-link-go JCL using MYCOMPGO procedure.
 - VSAMDD: PROD.MASTER.VSAM (VSAM KSDS)
 - ORDD: ORDERS.DAILY (PS input)
 - OUTDD: INVOICE.FILE (output report)
+
+**PROC reference:** [JCLPROC/MYCOMPGO.jcl](../../JCLPROC/MYCOMPGO.jcl)
 
 ## How to Run
 
@@ -252,28 +205,12 @@ If you prefer to compile and run separately, use these jobs:
 **Cause:** UNIT-PRICE misread due to incorrect RECORDSIZE or LRECL mismatch
 **Solution:** Verify RECORDSIZE(32,32) in IDCAMS matches FD PRODUCT-MASTER-FILE record structure (5+20+7=32 bytes)
 
-### Issue 5: Invoice File Not Allocated or OUTDD Missing
-
-**Cause:** OUTDD DD statement missing or previous INVOICE.FILE not deleted
-**Solution:** Verify STEP005 (IEFBR14 delete) completed RC=0 before STEP010
-
-### Issue 6: All 12 Orders Written to Invoice (No Errors)
-
-**Cause:** VSAM returns '00' even for non-existent keys — PRODUCT-ID key mismatch
-**Solution:** Verify ORDER-PRODUCT-ID is correctly moved to PRODUCT-ID before READ
-
 ## Program Output (SYSOUT)
 
 Expected execution log — see [OUTPUT/SYSOUT.txt](OUTPUT/SYSOUT.txt) for full output
 
 ## Notes
 
-- Program uses VSAM KSDS in RANDOM access mode — each order triggers a direct READ by key
-- No sequential scan of VSAM — lookup is O(1) by PRODUCT-ID key
 - FILE STATUS '23' is a soft error — processing continues with next order
-- Any other non-zero VSAM status is a hard error — program stops immediately
 - UNIT-PRICE stored as PIC 9(5)V99 (implied decimal) — no decimal point in physical data
-- CALC-TOTAL-COST uses COMP-3 (packed decimal) for efficient arithmetic
-- Invoice output uses Z(6).99 edit picture for right-aligned display with decimal point
-- Three independent FILE STATUS variables track VSAM, orders, and invoice files separately
 - Tested on IBM z/OS with Enterprise COBOL
