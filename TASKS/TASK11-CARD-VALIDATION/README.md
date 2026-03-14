@@ -168,6 +168,8 @@ Standard compile-link-go JCL using MYCOMPGO procedure.
 - APRVDD: APPROVED.FILE (approved output)
 - DECLDD: DECLINED.FILE (declined output)
 
+**PROC reference:** [JCLPROC/MYCOMPGO.jcl](../../JCLPROC/MYCOMPGO.jcl)
+
 ## How to Run
 
 ### Step 1: Define VSAM Cluster
