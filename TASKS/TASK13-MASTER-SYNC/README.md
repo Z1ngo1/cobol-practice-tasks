@@ -120,6 +120,7 @@ TRANS-ID = MASTER-ID  → transaction matches master record
 
 **FILE STATUS Codes (all four files):**
 - 00 - Successful operation
+- 35 - File not found on OPEN (program displays status and STOP RUN)
 - Other codes - I/O errors on open, read, or write (program displays status and STOP RUN)
 
 CLOSE errors treated as warnings (display only, no STOP RUN).
