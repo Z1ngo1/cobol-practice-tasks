@@ -36,14 +36,9 @@ Company performs annual sales bonus calculation based on region and sales perfor
 
 #### 2. BONUS-REPORT (PS) - Bonus Change Report
 
-**Access Mode:** 
-- OUTPUT (Sequential)
-
-**Organization:**
-- SEQUENTIAL
-
-**Record Format:**
-- Fixed (RECFM=F, LRECL=80)
+**Access Mode:** OUTPUT (Sequential)  
+**Organization:** SEQUENTIAL  
+**Record Format:** Fixed (RECFM=F, LRECL=80)  
 
 **Report Line Layout:**
 | Field | PIC | Description |
@@ -65,46 +60,6 @@ Same table as input, updated in place with new bonus values
 
 **Expected Final State:** [DATA/TB.SALES.BONUS.AFTER](DATA/TB.SALES.BONUS.AFTER)
 
-### Bonus Calculation Logic
-
-**Region-Based Increases:** 
-- EU Region: CALC_BONUS = CURRENT_BONUS × 1.12 (+12%)
-- NE Region: CALC_BONUS = CURRENT_BONUS × 1.10 (+10%)
-- AS Region: CALC_BONUS = CURRENT_BONUS × 1.08 (+8%)
-- SW Region: CALC_BONUS = CURRENT_BONUS × 1.05 (+5%)
-
-**High Sales Bonus:** 
-- If YEAR_SALES >= 150000, apply additional 5%: CALC_BONUS = CALC_BONUS × 1.05
-
-**Maximum Cap Rule:** 
-- If CALC_BONUS > 20000, cap at 20000 and set STATUS = CAP
-
-**Status Classification:**
-- **HIGHSAL** - High sales (>= 150000), bonus boost applied
-- **CAP** - Bonus capped at 20000
-- **LOW** - Final bonus < 2000
-- **OK** - Standard increase
-
-**Examples:** 
-- EMP 000101, EU, 1500.00, sales 80000 → 1500 × 1.12 = 1680.00 (LOW)
-- EMP 000102, EU, 3000.00, sales 180000 → 3000 × 1.12 × 1.05 = 3528.00 (HIGHSAL)
-- EMP 000103, NE, 10000.00, sales 200000 → 10000 × 1.10 × 1.05 = 11550.00 (HIGHSAL)
-- EMP 000104, AS, 18000.00, sales 250000 → 18000 × 1.08 × 1.05 = 20412 → 20000.00 (CAP)
-- EMP 000106, NE, 5000.00, sales 120000 → 5000 × 1.10 = 5500.00 (OK)
-
-### DB2 Objects
-
-#### Cursor: CUR-BONUS
-
-**Declaration:** 
-- DECLARE CUR-BONUS CURSOR WITH HOLD FOR SELECT * FROM TB_SALES_BONUS FOR UPDATE OF BONUS_AMT
-
-**WITH HOLD:** 
-- Cursor remains open after COMMIT (essential for batch processing)
-
-**FOR UPDATE OF BONUS_AMT:** 
-- Enables positioned UPDATE WHERE CURRENT OF
-
 ### Error Handling
 
 **SQLCODE Values:** 
@@ -119,50 +74,61 @@ Same table as input, updated in place with new bonus values
 - 00 - Successful operation
 - Other codes - I/O errors (program rolls back and stops)
 
+### Bonus Calculation Logic
+
+| REGION_CODE | Multiplier | Formula |
+|---|---|---|
+| EU | +12% | CALC_BONUS = BONUS_AMT × 1.12 |
+| NE | +10% | CALC_BONUS = BONUS_AMT × 1.10 |
+| AS | +8% | CALC_BONUS = BONUS_AMT × 1.08 |
+| SW | +5% | CALC_BONUS = BONUS_AMT × 1.05 |
+
+**High Sales Boost:** If YEAR_SALES >= 150000 → CALC_BONUS = CALC_BONUS × 1.05
+
+**Status Classification** (evaluated in priority order):
+- **CAP** — CALC_BONUS > 20000 → capped at 20000
+- **LOW** — final bonus < 2000
+- **HIGHSAL** — YEAR_SALES >= 150000 (boost applied, no cap)
+- **OK** — standard increase
+
+**Examples:**
+- **EMP 000101**, EU, bonus 1500.00, sales 80000 → 1500 × 1.12 = 1680.00 (LOW)
+- **EMP 000102**, EU, bonus 3000.00, sales 180000 → 3000 × 1.12 × 1.05 = 3528.00 (HIGHSAL)
+- **EMP 000103**, NE, bonus 10000.00, sales 200000 → 10000 × 1.10 × 1.05 = 11550.00 (HIGHSAL)
+- **EMP 000104**, AS, bonus 18000.00, sales 250000 → 18000 × 1.08 × 1.05 = 20412 → 20000.00 (CAP)
+- **EMP 000106**, NE, bonus 5000.00, sales 120000 → 5000 × 1.10 = 5500.00 (OK)
+
+### DB2 Objects
+
+#### Cursor: CUR-BONUS
+
+**Declaration:**
+- DECLARE CUR-BONUS CURSOR WITH HOLD FOR SELECT * FROM TB_SALES_BONUS FOR UPDATE OF BONUS_AMT
+
+**WITH HOLD:** Cursor remains open after COMMIT (essential for batch processing)
+
+**FOR UPDATE OF BONUS_AMT:** Enables positioned UPDATE WHERE CURRENT OF
+
 ## Program Flow
 
-1. **Initialization:**
-- Opens BONUS-REPORT-FILE (PS) for output
-- Validates OUT-STATUS = '00'
-- Writes report header line
-- Initializes counters (TOTAL-REC-UPDATED = 0, COMMIT-COUNT = 0)
-- Executes OPEN CUR-BONUS
-- Validates SQLCODE = 0
+1. **Initialization**
+   - Opens BONUS-REPORT-FILE, writes header line
+   - Initializes TOTAL-REC-UPDATED and COMMIT-COUNT counters
+   - Opens CUR-BONUS cursor; validates SQLCODE = 0
 
 2. **Fetch and Process Loop**
-- Performs FETCH NEXT until SQLCODE = 100 (EOF)
-- For each employee record fetched:
-  - Saves OLD-BONUS
-  - Calculates base increase by REGION-CODE:
-    - **EU**: CALC-BONUS = OLD-BONUS * 1.12
-    - **NE**: CALC-BONUS = OLD-BONUS * 1.10
-    - **AS**: CALC-BONUS = OLD-BONUS * 1.08
-    - **SW**: CALC-BONUS = OLD-BONUS * 1.05
-  - **IF YEAR-SALES >= 150000**:
-    - Applies high-sales boost: CALC-BONUS = CALC-BONUS * 1.05
-  - Determines STATUS:
-    - **IF CALC-BONUS > 20000**: Caps at 20000, STATUS = 'CAP'
-    - **ELSE IF CALC-BONUS < 2000**: STATUS = 'LOW'
-    - **ELSE IF YEAR-SALES >= 150000**: STATUS = 'HIGHSAL'
-    - **ELSE**: STATUS = 'OK'
-  - Executes UPDATE TB_SALES_BONUS
-  - Validates SQLCODE = 0 after UPDATE
-  - Increments TOTAL-REC-UPDATED
-  - Increments COMMIT-COUNT
-  - Writes detail line to BONUS-REPORT
-  - **IF COMMIT-COUNT >= 50**:
-    - Executes COMMIT WORK
-    - Displays "COMMIT AFTER {count} RECORDS"
-    - Resets COMMIT-COUNT to 0
+   - Fetches rows via CUR-BONUS until SQLCODE = +100 (EOF)
+   - Saves OLD-BONUS, calculates base CALC-BONUS by REGION-CODE (EU ×1.12 / NE ×1.10 / AS ×1.08 / SW ×1.05)
+   - If YEAR-SALES >= 150000: applies additional ×1.05 boost
+   - Determines STATUS by priority: CAP (>20000) → LOW (<2000) → HIGHSAL → OK
+   - Executes UPDATE WHERE CURRENT OF CUR-BONUS; validates SQLCODE = 0
+   - Writes detail line to BONUS-REPORT; increments counters
+   - Every 50 records: COMMIT WORK, display commit message, reset COMMIT-COUNT
 
 3. **Termination**
-- Executes final COMMIT WORK, validates SQLCODE = 0
-- Closes CUR-BONUS cursor (handles SQLCODE -501 gracefully)
-- Writes report footer: "TOTAL: nnn ROWS UPDATED"
-- Closes BONUS-REPORT-FILE
-- Validates OUT-STATUS = '00'
-- Displays "BONUS UPDATE COMPLETED: {count}"
-- STOP RUN
+   - Executes final COMMIT WORK; closes CUR-BONUS (SQLCODE -501 handled gracefully)
+   - Writes footer with total count; closes BONUS-REPORT-FILE
+   - Displays "BONUS UPDATE COMPLETED: {count}"; STOP RUN
 
 ## SQL Scripts
 
@@ -215,48 +181,33 @@ Coverage: EU=3, NE=3, AS=2, SW=2. High sales (>=150000): 5 employees
 ### Issue 1: SQLCODE -805 (PLAN not found)
 
 **Cause:** BIND PLAN not executed or PLAN name mismatch  
-**Solution:** Verify BIND step CC 0000, check PLAN name in BIND and RUN steps match  
-Verification: SELECT NAME FROM SYSIBM.SYSPLAN WHERE NAME = 'Z73460'
+**Solution:** Verify BIND step CC 0000, check PLAN name in BIND and RUN steps.
 
 ### Issue 2: SQLCODE -204 (Table not found)
 
 **Cause:** TB_SALES_BONUS not created or wrong schema/database  
-**Solution:** Verify table exists (SELECT COUNT(*) FROM TB_SALES_BONUS), check current schema (VALUES CURRENT SCHEMA), verify IN DATABASE clause matches your environment, check user privileges
+**Solution:** Verify table exists (SELECT COUNT(*) FROM TB_SALES_BONUS), check current schema 
+```sql
+SELECT COUNT(*) FROM TB_SALES_BONUS
+VALUES CURRENT SCHEMA
+```
 
-### Issue 3: DCLGEN Mismatch
-
-**Cause:** DCLGEN TASK8 copybook not found or structure mismatch  
-**Solution:** Regenerate DCLGEN: DSN SYSTEM(DBDG) DCLGEN TABLE(TB_SALES_BONUS) LIBRARY(Z73460.DCLGEN) MEMBER(TASK8) LANGUAGE(COBOL) QUOTE  
-Verify JCL COBOL.SYSLIB points to correct DCLGEN library
-
-### Issue 4: VARCHAR Field Error
+### Issue 3: VARCHAR Field Error
 
 **Cause:** Incorrect handling of EMP-NAME VARCHAR field  
 **Solution:** Use EMP-NAME-LEN (length) and EMP-NAME-TEXT (data) subfields as generated by DCLGEN  
 Do not move directly to EMP-NAME group level
 
-### Issue 5: S0C7 Data Exception
+### Issue 4: S0C7 Data Exception
 
 **Cause:** BONUS_AMT field alignment issue between DCLGEN and table  
 **Solution:** Regenerate DCLGEN, verify BONUS_AMT declared as PIC S9(7)V9(2) USAGE COMP-3  
 Ensure CALC-BONUS working storage variable uses same picture and usage
 
-### Issue 6: Report File Not Allocated
+### Issue 5: Report File Not Allocated
 
 **Cause:** OUTDD DD statement missing or incorrect DSN  
 **Solution:** Verify RUNPROG step includes OUTDD DD statement, check TASK8.REPORT.FILE cataloged after execution, review SYSOUT for allocation errors
-
-### Issue 7: Intermediate Commit Not Triggered
-
-**Cause:** Dataset has fewer than 50 records  
-**Solution:** This is normal for 10-record test dataset  
-INTERMEDIATE COMMIT only occurs when COMMIT-COUNT reaches 50, final COMMIT always executes
-
-### Issue 8: SQLCODE -501 (Cursor Already Closed)
-
-**Cause:** Attempting to close already-closed cursor  
-**Solution:** Program includes IF SQLCODE NOT = 0 AND SQLCODE NOT = -501 check  
-This is normal if cursor closed by prior error, no action needed
 
 ## Program Output (SYSOUT)
 
@@ -278,14 +229,8 @@ Expected execution log - see [OUTPUT/SYSOUT.txt](OUTPUT/SYSOUT.txt) for full out
 
 ## Notes
 
-- Program uses WITH HOLD cursor to maintain position across COMMIT operations
-- UPDATE WHERE CURRENT OF performs positioned update on last fetched row
-- Intermediate commits every 50 records balance performance and restart capability
-- ROLLBACK on any error ensures data consistency (all-or-nothing within batch)
-- Multi-factor calculation: base region increase, then high-sales boost, then cap check
+- WITH HOLD cursor maintains position across COMMIT — without it cursor closes after each commit and batch processing fails
 - Status priority: CAP overrides HIGHSAL, LOW applies if final bonus under threshold
-- BONUS_AMT and CALC_BONUS use COMP-3 (packed decimal) for DB2 DECIMAL column mapping
-- Report uses edited numeric fields (ZZZZ9.99) for right-aligned decimal display
 - VARCHAR field EMP_NAME handled via length prefix (EMP-NAME-LEN) and text area (EMP-NAME-TEXT)
 - Tested on IBM z/OS with DB2 for z/OS and Enterprise COBOL
 
