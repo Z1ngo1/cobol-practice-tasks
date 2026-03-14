@@ -157,7 +157,7 @@ Standard compile-link-go JCL using MYCOMPGO procedure.
 
 ### Step 3: Prepare Transaction File
 
-**Manual upload**
+**Upload via ISPF 3.4**
 
 Upload [DATA/TRANS.FILE.INPUT](DATA/TRANS.FILE.INPUT) to PS dataset manually via ISPF with exact record length (32 bytes)
 
