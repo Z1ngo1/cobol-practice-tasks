@@ -71,11 +71,12 @@ SOUTHSHOP10030000   → REGION=SOUTH, SHOP=SHOP1, AMOUNT=300.00
 
 ### Error Handling
 
-**FILE STATUS Codes:**
+**FILE STATUS Codes (SALES.DATA, SALES.REPORT):**
 - 00 - Successful operation
+- 35 - File not found on OPEN (program displays status and STOP RUN)
 - Other codes - I/O errors on open, read, or write (program displays status and STOP RUN)
 
-**CLOSE errors** treated as warnings (program displays warning but does not stop).
+CLOSE errors treated as warnings (display only, no STOP RUN).
 
 ## Program Flow
 
