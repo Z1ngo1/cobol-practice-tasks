@@ -1,0 +1,18 @@
+-- TASK 19: QUERY OUTPUT DATA
+
+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+
+CUST_ID  CUST_NAME                       EMAIL                                     PHONE       CREDIT_LIMIT                                                     
+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+
+000100   NEW CUSTOMER ONE                email1@test.com                           5555123456       1000.00                                                     
+000400   ALICE WONDERLAND                alice@example.com                         5555123456       1000.00                                                     
+000600   BOB BUILDER PRO                 bob.builder@company.com                   5555222222       3000.00                                                     
+000900   EMMA WATSON ACTRESS             emma.watson@hollywood.com                 5555666666       5000.00                                                     
+001100   GRACE KELLY PRINCESS            grace.kelly@monaco.mc                     5555777777       6000.00                                                     
+001300   IRENE CURIE SCIENTIST           irene.curie@science.fr                    5555999999       7000.00                                                     
+001400   JACK LONDON WRITER              jack.london@books.com                     5555334455       8000.00                                                     
+001500   KATE WINSLET STAR               kate@films.com                            5551234567      80850.00                                                     
+001600   LARRY PAGE GOOGLE               larry@google.com                          5555667788       9000.00                                                     
+001700   MARY SHELLEY AUTHOR             mary.shelley@literature.uk                5555998877       9500.00                                                     
+DSNE610I NUMBER OF ROWS DISPLAYED IS 10                                                                                                                         
+DSNE616I STATEMENT EXECUTION WAS SUCCESSFUL, SQLCODE IS 100                                                                                                     
+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+
