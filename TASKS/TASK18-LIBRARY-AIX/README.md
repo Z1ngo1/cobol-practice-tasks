@@ -84,7 +84,6 @@ Links AIX to base cluster. Used as DD VSAMDD1 alongside VSAMDD (base cluster) â€
 | Field | PIC | Length | Description |
 |---|---|---|---|
 | SEARCH-AUTHOR | X(20) | 20 | Author name to search |
-| FILLER | X(60) | 60 | Unused padding to LRECL=80 |
 
 **Sample Data:** [DATA/SEARCH-REQ-INPUT](DATA/SEARCH-REQ-INPUT)
 
@@ -139,7 +138,7 @@ CLOSE errors treated as warnings (display only, no STOP RUN).
 
 ### [ALL-STEPS.jcl](JCL/ALL-STEPS.jcl) â€” Full Setup + Compile + Run (Recommended)
 
-**7-step master job with COND=(04,LT) chaining:**
+**8-step master job with COND=(04,LT) chaining:**
 
 | Step | Program | Action |
 |---|---|---|
