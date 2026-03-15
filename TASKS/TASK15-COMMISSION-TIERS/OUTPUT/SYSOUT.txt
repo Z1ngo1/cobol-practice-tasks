@@ -1,0 +1,9 @@
+ ========================================
+ COMMISSION CALCULATION SUMMARY          
+ ========================================
+ COMMISSION TIERS LOADED:     5          
+ EMPLOYEES PROCESSED:        12          
+ RECORDS WRITTEN:            11          
+ TIER MATCHED:               11          
+ NO TIER MATCH:               1          
+ ========================================
