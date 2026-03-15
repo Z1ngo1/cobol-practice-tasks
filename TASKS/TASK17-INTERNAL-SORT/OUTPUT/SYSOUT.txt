@@ -1,0 +1,8 @@
+ ========================================
+ HONOR ROLL GENERATION SUMMARY           
+ ========================================
+ RECORDS READ:           20              
+ RECORDS FILTERED:        5              
+ RECORDS PASSED:         15              
+ RECORDS WRITTEN:        15              
+ ========================================
