@@ -1,0 +1,20 @@
+000100 INSERTED OK                                                              
+000200 VALIDATION ERROR: INVALID EMAIL                                          
+000300 VALIDATION ERROR: INVALID PHONE                                          
+000400 INSERTED OK                                                              
+       VALIDATION ERROR: ID IS NULL                                             
+000600 INSERTED OK                                                              
+000100 DB2 ERROR: DUPLICATE PRIMARY KEY                                         
+000700 VALIDATION ERROR: INVALID PHONE                                          
+000800 VALIDATION ERROR: INVALID EMAIL                                          
+000900 INSERTED OK                                                              
+001000 VALIDATION ERROR: INVALID PHONE                                          
+001100 INSERTED OK                                                              
+001200 VALIDATION ERROR: INVALID EMAIL                                          
+001300 INSERTED OK                                                              
+000400 DB2 ERROR: DUPLICATE PRIMARY KEY                                         
+001400 INSERTED OK                                                              
+001500 INSERTED OK                                                              
+001600 INSERTED OK                                                              
+001700 INSERTED OK                                                              
+       VALIDATION ERROR: ID IS NULL                                             
