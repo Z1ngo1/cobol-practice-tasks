@@ -119,7 +119,7 @@ CLOSE errors treated as warnings (display only, no STOP RUN).
 
 Creates TB_CUSTOMERS table with primary key on CUST_ID
 
-### 2. [TB_CUSTOMERS.AFTER.sql](SQL/TB_CUSTOMERS.AFTER.sql) - Verify Inserted Data
+### 2. [TB_CUSTOMERS.AFTER](SQL/TB_CUSTOMERS.AFTER) - Verify Inserted Data
 
 Queries all rows from TB_CUSTOMERS after import run
 
