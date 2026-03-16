@@ -38,7 +38,7 @@ CREATE TABLE TB_EMPLOYEES (
 ) IN DATABASE Z73460;
 ```
 
-See [SQL/CREATE-TABLE.sql](SQL/CREATE-TABLE.sql) for full DDL.
+See [SQL/CREATE.TABLE.sql](SQL/CREATE.TABLE.sql) for full DDL.
 
 ## SQLCODE Handling
 
@@ -70,7 +70,7 @@ See [SQL/CREATE-TABLE.sql](SQL/CREATE-TABLE.sql) for full DDL.
 | INP-HIRE-DATE | 9(8) | 8 | 35 | Hire date YYYYMMDD |
 | INP-STATUS | X(1) | 1 | 43 | Employee status: A=Active, I=Inactive |
 
-**Sample Data (24 records):** [DATA/EMP-UPDATE-INPUT](DATA/EMP-UPDATE-INPUT)
+**Sample Data (24 records):** [DATA/EMP.UPDATE](DATA/EMP.UPDATE)
 
 ### Output Files
 
@@ -91,11 +91,11 @@ See [SQL/CREATE-TABLE.sql](SQL/CREATE-TABLE.sql) for full DDL.
 - `SALARY VALIDATION ERROR: ZERO VALUE` — salary = 0
 - `STATUS VALIDATION ERROR` — status not A or I
 
-**Expected output:** [DATA/SYNC-LOG-EXPECTED](DATA/SYNC-LOG-EXPECTED)
+**Expected output:** [DATA/SYNC.LOG](DATA/SYNC.LOG)
 
 #### TB_EMPLOYEES (DB2 Table) — Synced Employee Data
 
-**Expected final state (15 rows):** [DATA/DB2-TABLE-EXPECTED](DATA/DB2-TABLE-EXPECTED)
+**Expected final state (15 rows):** [DATA/TB_EMPLOYEES.AFTER](DATA/TB_EMPLOYEES.AFTER)
 
 ### Error Handling
 
@@ -125,11 +125,11 @@ CLOSE errors treated as warnings (display only, no STOP RUN).
 
 ## SQL Scripts
 
-### 1. [CREATE-TABLE.sql](SQL/CREATE-TABLE.sql) - Create Employees Table
+### 1. [CREATE.TABLE.sql](SQL/CREATE.TABLE.sql) - Create Employees Table
 
 Creates TB_EMPLOYEES table with primary key on EMP_ID
 
-### 2. [QUERY-OUTPUT.sql](SQL/QUERY-OUTPUT.sql) - Verify Synced Data
+### 2. [DATA/TB_EMPLOYEES.AFTER](DATA/TB_EMPLOYEES.AFTER) - Verify Synced Data
 
 Queries all rows from TB_EMPLOYEES after sync run
 
@@ -146,17 +146,17 @@ Queries all rows from TB_EMPLOYEES after sync run
 
 ### Step 1: Create DB2 Table
 
-**Execute** [SQL/CREATE-TABLE.sql](SQL/CREATE-TABLE.sql) via SPUFI or QMF
+**Execute** [SQL/CREATE.TABLE.sql](SQL/CREATE.TABLE.sql) via SPUFI or QMF
 
 ### Step 2: Load Input Data
 
-**Allocate** and load `EMP.UPDATE` with [DATA/EMP-UPDATE-INPUT](DATA/EMP-UPDATE-INPUT)
+**Allocate** and load `EMP.UPDATE` with [DATA/EMP.UPDATE](DATA/EMP.UPDATE)
 
 ### Step 3: Execute Sync Program
 
 **Submit** [JCL/COBDB2CP.jcl](JCL/COBDB2CP.jcl)  
 **See** [OUTPUT/SYSOUT.txt](OUTPUT/SYSOUT.txt)  
-**Review** [DATA/SYNC-LOG-EXPECTED](DATA/SYNC-LOG-EXPECTED) for expected audit log
+**Review** [DATA/SYNC.LOG](DATA/SYNC.LOG) for expected audit log
 
 ### Step 4: Verify Results
 
@@ -165,7 +165,7 @@ Queries all rows from TB_EMPLOYEES after sync run
 - `SELECT EMP_ID, EMP_NAME, DEPT, SALARY, HIRE_DATE, STATUS FROM TB_EMPLOYEES ORDER BY EMP_ID`
 - **Expected:** 15 rows; 00100/00200/00300 show updated salary values
 - **Check SYNC.LOG** — 15 INSERT SUCCESS, 3 UPDATE messages, 6 validation errors
-- **Compare** [DATA/DB2-TABLE-EXPECTED](DATA/DB2-TABLE-EXPECTED) vs actual query result
+- **Compare** [DATA/TB_EMPLOYEES.AFTER](DATA/TB_EMPLOYEES.AFTER) vs actual query result
 
 > **To re-run cleanly**, truncate TB_EMPLOYEES first:
 > ```sql
