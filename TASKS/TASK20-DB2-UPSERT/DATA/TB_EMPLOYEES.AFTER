@@ -1,0 +1,23 @@
+-- TASK 20: QUERY OUTPUT DATA
+
+---------+---------+---------+---------+---------+---------+---------+---------+
+EMP_ID  EMP_NAME                        DEPT       SALARY  HIRE_DATE   STATUS   
+---------+---------+---------+---------+---------+---------+---------+---------+
+00100   JOHN DOE UPDATED                SAL       7500.00  1995-01-01  A        
+00200   JANE SMITH PROMO                HR        6500.00  2000-05-15  A        
+00300   BOB MARLEY ACTIVE               IT        8500.00  1970-02-06  A        
+00400   ALICE WONDERLAND                FIN       5500.00  1998-03-15  A        
+00600   CHARLIE BROWN                   IT        4800.00  1999-12-20  A        
+00900   FRANK SINATRA                   IT        6200.00  1915-12-12  A        
+01000   GRACE KELLY                     HR        4900.00  1956-11-12  A        
+01200   IRENE CURIE                     FIN       5100.00  1996-06-15  A        
+01400   KATE WINSLET                    SAL       5800.00  1975-10-05  A        
+01500   LARRY PAGE                      IT        9200.00  1998-09-07  A        
+01600   MARY SHELLEY                    FIN       4700.00  1797-08-30  A        
+01700   MICHAEL JACKSON                 HR        6700.00  1958-08-29  I        
+01800   ELVIS PRESLEY                   SAL       7100.00  1935-01-08  I        
+01900   WHITNEY HOUSTON                 HR        6300.00  1963-08-09  I        
+02000   PRINCE ROGERS                   IT        6900.00  1958-06-07  I        
+DSNE610I NUMBER OF ROWS DISPLAYED IS 15                                         
+DSNE616I STATEMENT EXECUTION WAS SUCCESSFUL, SQLCODE IS 100                     
+---------+---------+---------+---------+---------+---------+---------+---------+
