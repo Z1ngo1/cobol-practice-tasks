@@ -35,7 +35,7 @@ CREATE TABLE TB_CUSTOMERS (
 ) IN DATABASE Z73460;
 ```
 
-See [SQL/CREATE-TABLE.sql](SQL/CREATE-TABLE.sql) for full DDL.
+See [SQL/CREATE.TABLE.sql](SQL/CREATE.TABLE.sql) for full DDL.
 
 ## SQLCODE Handling
 
@@ -66,7 +66,7 @@ See [SQL/CREATE-TABLE.sql](SQL/CREATE-TABLE.sql) for full DDL.
 | INP-PHONE | X(10) | 10 | 76 | Phone number (10 digits) |
 | INP-LIMIT | 9(5)V99 | 7 | 86 | Credit limit (implied decimal) |
 
-**Sample Data (20 records):** [DATA/NEW-CUSTOMER-INPUT](DATA/NEW-CUSTOMER-INPUT)
+**Sample Data (20 records):** [DATA/NEW.CUSTOMER](DATA/NEW.CUSTOMER)
 
 ### Output Files
 
@@ -85,7 +85,7 @@ See [SQL/CREATE-TABLE.sql](SQL/CREATE-TABLE.sql) for full DDL.
 - `DB2 ERROR: DUPLICATE PRIMARY KEY` — SQLCODE -803
 - `DB2 ERROR: CHECK SQLCODE` — other non-critical DB2 error
 
-**Expected output:** [DATA/SUCCESS-LOG-EXPECTED](DATA/SUCCESS-LOG-EXPECTED)
+**Expected output:** [DATA/SUCCESS.LOG](DATA/SUCCESS.LOG)
 
 ### Error Handling
 
@@ -115,11 +115,11 @@ CLOSE errors treated as warnings (display only, no STOP RUN).
 
 ## SQL Scripts
 
-### 1. [CREATE-TABLE.sql](SQL/CREATE-TABLE.sql) - Create Customers Table
+### 1. [CREATE.TABLE.sql](SQL/CREATE.TABLE.sql) - Create Customers Table
 
 Creates TB_CUSTOMERS table with primary key on CUST_ID
 
-### 2. [QUERY-OUTPUT.sql](SQL/QUERY-OUTPUT.sql) - Verify Inserted Data
+### 2. [QUERY.OUTPUT.sql](SQL/QUERY.OUTPUT.sql) - Verify Inserted Data
 
 Queries all rows from TB_CUSTOMERS after import run
 
@@ -136,17 +136,17 @@ Queries all rows from TB_CUSTOMERS after import run
 
 ### Step 1: Create DB2 Table
 
-**Execute** [SQL/CREATE-TABLE.sql](SQL/CREATE-TABLE.sql) via SPUFI or QMF
+**Execute** [SQL/CREATE.TABLE.sql](SQL/CREATE.TABLE.sql) via SPUFI or QMF
 
 ### Step 2: Load Input Data
 
-**Allocate** and load `NEW.CUSTOMER` with [DATA/NEW-CUSTOMER-INPUT](DATA/NEW-CUSTOMER-INPUT)
+**Allocate** and load `NEW.CUSTOMER` with [DATA/NEW.CUSTOMER](DATA/NEW.CUSTOMER)
 
 ### Step 3: Execute Import Program
 
 **Submit** [JCL/COBDB2CP.jcl](JCL/COBDB2CP.jcl)  
 **See** [OUTPUT/SYSOUT.txt](OUTPUT/SYSOUT.txt)  
-**Review** [DATA/SUCCESS-LOG-EXPECTED](DATA/SUCCESS-LOG-EXPECTED) for expected log output
+**Review** [DATA/SUCCESS.LOG](DATA/SUCCESS.LOG) for expected log output
 
 ### Step 4: Verify Results
 
@@ -155,7 +155,7 @@ Queries all rows from TB_CUSTOMERS after import run
 - `SELECT CUST_ID, CUST_NAME, EMAIL, PHONE, CREDIT_LIMIT FROM TB_CUSTOMERS ORDER BY CUST_ID`
 - **Expected:** 10 rows (IDs: 000100, 000400, 000600, 000900, 001100, 001300, 001400, 001500, 001600, 001700)
 - **Check SUCCESS.LOG** — 10 INSERTED OK, 10 errors (validation + duplicate)
-- **Verify** [SQL/QUERY-OUTPUT.sql](SQL/QUERY-OUTPUT.sql) via SPUFI matches [DATA/SUCCESS-LOG-EXPECTED](DATA/SUCCESS-LOG-EXPECTED)
+- **Verify** [SQL/QUERY.OUTPUT](SQL/QUERY.OUTPUT.sql) via SPUFI matches [DATA/SUCCESS.LOG](DATA/SUCCESS.LOG)
 
 ## Common Issues
 
