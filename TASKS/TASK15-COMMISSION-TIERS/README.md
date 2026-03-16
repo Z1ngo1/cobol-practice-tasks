@@ -54,7 +54,7 @@ PHASE 2 - PROCESSING (per employee):
 | COMM-LIMIT | 9(6) | 6 | Upper salary boundary for this tier |
 | COMM-PCT | V999 | 3 | Commission rate as implied decimal |
 
-**Sample Data:** [DATA/COMM-TIERS-INPUT](DATA/COMM-TIERS-INPUT)
+**Sample Data:** [DATA/COMM.TIERS](DATA/COMM.TIERS)
 
 #### 2. SALES.WEEKLY (PS) - Weekly Employee Sales File
 
@@ -68,7 +68,7 @@ PHASE 2 - PROCESSING (per employee):
 | SAL-ID | 9(5) | 5 | Employee ID |
 | SAL-AMT | 9(6)V99 | 8 | Weekly sales amount (implied decimal) |
 
-**Sample Data:** [DATA/SALES-WEEKLY-INPUT](DATA/SALES-WEEKLY-INPUT)
+**Sample Data:** [DATA/SALES.WEEKLY](DATA/SALES.WEEKLY)
 
 ### Output Files
 
@@ -90,7 +90,7 @@ PHASE 2 - PROCESSING (per employee):
 | OUT-RES | 9(6)V99 | 8 | Calculated commission amount |
 | FILLER | X(53) | 53 | Unused |
 
-**Expected Output:** [DATA/PAYOUT-REPORT-EXPECTED](DATA/PAYOUT-REPORT-EXPECTED)
+**Expected Output:** [DATA/PAYOUT.RPT](DATA/PAYOUT.RPT)
 
 ### Error Handling
 
@@ -133,7 +133,7 @@ Standard compile-link-go JCL using MYCOMPGO procedure.
 
 ### Step 1: Allocate and Load Commission Tiers File
 
-- Upload [DATA/COMM-TIERS-INPUT](DATA/COMM-TIERS-INPUT) to PS dataset manually via ISPF
+- Upload [DATA/COMM.TIERS](DATA/COMM.TIERS) to PS dataset manually via ISPF
 
 **Alternative:**
 1. Create PS file with LRECL=80 and insert inline data using IEBGENER:
@@ -142,7 +142,7 @@ Standard compile-link-go JCL using MYCOMPGO procedure.
 
 ### Step 2: Allocate and Load Sales File
 
-- Upload [DATA/SALES-WEEKLY-INPUT](DATA/SALES-WEEKLY-INPUT) to PS dataset manually via ISPF
+- Upload [DATA/SALES.WEEKLY](DATA/SALES.WEEKLY) to PS dataset manually via ISPF
 
 **Alternative:**
 1. Create PS file with LRECL=80 and insert inline data using IEBGENER:
@@ -153,7 +153,7 @@ Standard compile-link-go JCL using MYCOMPGO procedure.
 
 **Submit** [JCL/COMPRUN.jcl](JCL/COMPRUN.jcl)  
 **See** [OUTPUT/SYSOUT.txt](OUTPUT/SYSOUT.txt) for execution summary  
-**Review** [DATA/PAYOUT-REPORT-EXPECTED](DATA/PAYOUT-REPORT-EXPECTED) for expected output  
+**Review** [DATA/PAYOUT.RPT](DATA/PAYOUT.REPORT) for expected output  
 
 **Alternative:**
 If you prefer to compile and run separately, use these jobs:
