@@ -136,7 +136,7 @@ CLOSE errors treated as warnings (display only, no STOP RUN).
 
 ## JCL Jobs
 
-### [ALL-STEPS.jcl](JCL/ALL-STEPS.jcl) — Full Setup + Compile + Run (Recommended)
+### [ALLSTEPS.jcl](JCL/ALLSTEPS.jcl) — Full Setup + Compile + Run (Recommended)
 
 **8-step master job with COND=(04,LT) chaining:**
 
