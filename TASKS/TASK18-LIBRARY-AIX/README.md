@@ -31,7 +31,7 @@ LIBRARY.MASTER.VSAM.PATH
 
 ## Setup: Four Required JCL Steps (Before Running COBOL)
 
-The AIX requires four IDCAMS steps in sequence. Each is provided both as a standalone JCL and within [JCL/ALL-STEPS.jcl](JCL/ALL-STEPS.jcl).
+The AIX requires four IDCAMS steps in sequence. Each is provided both as a standalone JCL and within [JCL/ALLSTEPS.jcl](JCL/ALLSTEPS.jcl).
 
 | Step | JCL File | IDCAMS Command | Purpose |
 |---|---|---|---|
