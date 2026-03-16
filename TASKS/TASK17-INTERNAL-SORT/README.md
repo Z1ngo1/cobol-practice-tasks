@@ -42,7 +42,7 @@ INPUT PROCEDURE          SORT ENGINE          OUTPUT PROCEDURE
 | STUD-CLASS | X(3) | 3 | 26 | Class identifier (e.g. 09A, 10B, 11A) |
 | STUD-SCORE | 9(3) | 3 | 29 | Exam score (0–100) |
 
-**Sample Data:** [DATA/EXAM-RAW-INPUT](DATA/EXAM-RAW-INPUT)
+**Sample Data:** [DATA/EXAM.RAW](DATA/EXAM.RAW)
 
 #### 2. SORT-FILE (SD) - Sort Work File
 
@@ -62,7 +62,7 @@ INPUT PROCEDURE          SORT ENGINE          OUTPUT PROCEDURE
 **Record Format:** Fixed Block (RECFM=FB, LRECL=31)    
 **Record Layout:** Same layout as EXAM-REC — HONOR-REC mirrors input record structure  
 
-**Expected Output:** [DATA/HONOR-ROLL-EXPECTED](DATA/HONOR-ROLL-EXPECTED)
+**Expected Output:** [DATA/HONOR.ROLL](DATA/HONOR.ROLL)
 
 ### Error Handling
 
@@ -109,7 +109,7 @@ Standard compile-link-go JCL using MYCOMPGO procedure.
 
 ### Step 1: Allocate and Load Exam File
 
-Upload [DATA/EXAM-RAW-INPUT](DATA/EXAM-RAW-INPUT) to PS dataset manually via ISPF
+Upload [DATA/EXAM.RAW](DATA/EXAM.RAW) to PS dataset manually via ISPF
 
 **Alternative:**
 1. Create PS file with LRECL=31 and insert inline data using IEBGENER:
@@ -124,7 +124,7 @@ Upload [DATA/EXAM-RAW-INPUT](DATA/EXAM-RAW-INPUT) to PS dataset manually via ISP
 
 **Submit** [JCL/COMPRUN.jcl](JCL/COMPRUN.jcl)  
 **See** [OUTPUT/SYSOUT.txt](OUTPUT/SYSOUT.txt) for execution summary  
-**Review** [DATA/HONOR-ROLL-EXPECTED](DATA/HONOR-ROLL-EXPECTED) for expected output  
+**Review** [DATA/HONOR.ROLL](DATA/HONOR.ROLL) for expected output  
 
 **Alternative:**
 If you prefer to compile and run separately, use these jobs:
