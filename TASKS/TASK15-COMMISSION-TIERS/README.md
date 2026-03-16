@@ -153,7 +153,7 @@ Standard compile-link-go JCL using MYCOMPGO procedure.
 
 **Submit** [JCL/COMPRUN.jcl](JCL/COMPRUN.jcl)  
 **See** [OUTPUT/SYSOUT.txt](OUTPUT/SYSOUT.txt) for execution summary  
-**Review** [DATA/PAYOUT.RPT](DATA/PAYOUT.REPORT) for expected output  
+**Review** [DATA/PAYOUT.RPT](DATA/PAYOUT.RPT) for expected output  
 
 **Alternative:**
 If you prefer to compile and run separately, use these jobs:
