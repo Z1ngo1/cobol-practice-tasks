@@ -8,31 +8,18 @@ HR department receives a daily employee sync file from an external HR system. Re
 - Read employee records from EMP.UPDATE sequential file (PS, FB, LRECL=44)
 - Validate each record: ID not empty, NAME not empty, SALARY > 0 and numeric, STATUS = 'A' or 'I'
 - For valid records: SELECT from TB_EMPLOYEES to check existence
-- If found (SQLCODE=0): UPDATE all fields, log salary change details if salary changed
+- If found (SQLCODE=0): UPDATE all fields, log salary change details
 - If not found (SQLCODE=100): INSERT new row, log success
 - COMMIT every 50 successful operations; ROLLBACK on critical errors
 - Output full audit log to SYNC.LOG
 
-## Upsert Flow
-
-```
-For each valid input record:
-  EXEC SQL SELECT EMP_NAME, SALARY
-           FROM TB_EMPLOYEES
-           WHERE EMP_ID = :HV-EMP-ID
-
-  SQLCODE = 0   → employee EXISTS   → PERFORM UPDATE-EMPLOYEE
-  SQLCODE = 100 → employee NOT FOUND → PERFORM INSERT-EMPLOYEE
-  SQLCODE = other → log SELECT error, count as error, skip
-```
-
-## Validation Rules (All Four Must Pass)
+## Validation Rules
 
 | # | Field | Rule | Error Message |
 |---|---|---|---|
 | 1 | EMP_ID | Must not be SPACES | `ID VALIDATION ERROR: ID IS EMPTY` |
 | 2 | EMP_NAME | Must not be SPACES | `VALIDATION ERROR: NAME IS EMPTY (ID=xxxxx)` |
-| 3 | SALARY | Must be NUMERIC, > 0, not ZERO | `SALARY VALIDATION ERROR: NON-NUMERIC / NEGATIVE VALUE / ZERO VALUE` |
+| 3 | SALARY | Must be NUMERIC, > 0, not ZERO | `SALARY VALIDATION ERROR: NON-NUMERIC / ZERO VALUE` |
 | 4 | STATUS | Must be `'A'` or `'I'` | `STATUS VALIDATION ERROR` |
 
 All four validations run regardless — `WS-ERROR-FIND` flag accumulates failures. If any validation sets `ERROR-FIND`, PROCESS-EMPLOYEE is skipped and ADD 1 TO RECORDS-ERRORS is performed once.
@@ -53,72 +40,16 @@ CREATE TABLE TB_EMPLOYEES (
 
 See [SQL/CREATE-TABLE.sql](SQL/CREATE-TABLE.sql) for full DDL.
 
-## DB2 Host Variables
+## SQLCODE Handling
 
-```cobol
-* Current values (for INSERT/UPDATE)
-01 HV-EMP-ID       PIC X(5).
-01 HV-EMP-NAME.
-   49 HV-EMP-NAME-LEN  PIC S9(4) COMP-5.
-   49 HV-EMP-NAME-TEXT PIC X(20).
-01 HV-EMP-DEPT     PIC X(3).
-01 HV-SALARY       PIC S9(7)V99 COMP-3.
-01 HV-HIRE-DATE    PIC X(10).
-01 HV-STATUS       PIC X(1).
-
-* Old values (fetched by SELECT, used for salary comparison)
-01 HV-OLD-NAME.
-   49 HV-OLD-NAME-LEN  PIC S9(4) COMP-5.
-   49 HV-OLD-NAME-TEXT PIC X(20).
-01 HV-OLD-SALARY   PIC S9(7)V99 COMP-3.
-```
-
-Two sets of host variables:
-- `HV-*` — new values from input file, used for INSERT/UPDATE
-- `HV-OLD-*` — old values fetched from DB2 by SELECT, used to detect salary change
-
-## Date Format Conversion
-
-Input file stores HIRE_DATE as `YYYYMMDD` (8-digit numeric). DB2 `DATE` column requires `YYYY-MM-DD` (10-char string). Conversion in `FORMAT-HIRE-DATE`:
-
-```cobol
-MOVE INP-HIRE-DATE(1:4) TO WS-YEAR
-MOVE INP-HIRE-DATE(5:2) TO WS-MONTH
-MOVE INP-HIRE-DATE(7:2) TO WS-DAY
-STRING WS-YEAR '-' WS-MONTH '-' WS-DAY INTO HV-HIRE-DATE
-```
-
-- `HV-HIRE-DATE PIC X(10)` holds the formatted result
-- DB2 accepts string literal in ISO date format `YYYY-MM-DD` for DATE columns
-
-## Update Logic: Salary Change Detection
-
-When UPDATE succeeds (SQLCODE=0):
-- `HV-OLD-SALARY` (fetched by SELECT) is compared to `HV-SALARY` (new value from input)
-- If different: log `UPDATE(SALARY CHANGE FROM {old} TO {new})`
-- If same: log `UPDATED (NO SALARY CHANGE: {value})`
-
-This gives a full audit trail showing exactly what changed.
-
-## Batch Commit Strategy
-
-```
-After each successful INSERT or UPDATE:
-  ADD 1 TO COMMIT-COUNTER
-
-  IF COMMIT-COUNTER >= 50:
-    EXEC SQL COMMIT WORK END-EXEC
-    → IF SQLCODE ≠ 0: ROLLBACK + STOP RUN
-    ADD 1 TO COMMIT-BATCHES
-    MOVE 0 TO COMMIT-COUNTER
-
-At CLOSE-ALL-FILES (final commit):
-  IF COMMIT-COUNTER > 0:
-    EXEC SQL COMMIT WORK END-EXEC
-    ADD 1 TO COMMIT-BATCHES
-```
-
-Batch size is 50 (vs 100 in TASK19) — smaller batch = more frequent commits = less rollback exposure for update-heavy workloads.
+| SQLCODE | Meaning | Action |
+|---|---|---|
+| 0 | INSERT or UPDATE successful | log success, increment COMMIT-COUNTER |
+| 100 | Employee not found (SELECT) | PERFORM INSERT-EMPLOYEE |
+| -911 | Deadlock/timeout (rollback by DB2) | ROLLBACK + STOP RUN |
+| -913 | Deadlock/timeout (no rollback) | ROLLBACK + STOP RUN |
+| < -900 | Critical system error | ROLLBACK + STOP RUN |
+| Other | Non-critical DB2 error | log error, count as error, continue |
 
 ## Files
 
@@ -126,7 +57,7 @@ Batch size is 50 (vs 100 in TASK19) — smaller batch = more frequent commits = 
 
 #### EMP.UPDATE (PS) — Employee Sync Records
 
-**Organization:** SEQUENTIAL
+**Organization:** SEQUENTIAL  
 **Record Format:** Fixed Block (RECFM=FB, LRECL=44)
 
 **Record Layout:**
@@ -141,19 +72,11 @@ Batch size is 50 (vs 100 in TASK19) — smaller batch = more frequent commits = 
 
 **Sample Data (24 records):** [DATA/EMP-UPDATE-INPUT](DATA/EMP-UPDATE-INPUT)
 
-**Intentional test cases:**
-- Empty EMP_ID (2 records — spaces in ID field)
-- Empty EMP_NAME (1 record — ID=00500, name = spaces)
-- Non-numeric SALARY (`XXXXXXX` — 2 records: 00700, 01100)
-- Zero SALARY (1 record — ID=00800)
-- Invalid STATUS = `'X'` (1 record — ID=01300)
-- Duplicate IDs that trigger UPDATE: 00100 (salary: 5000→7500), 00200 (salary: 4500→6500), 00300 (salary: 6000→8500, status: I→A)
-
 ### Output Files
 
 #### SYNC.LOG (PS) — Audit Log
 
-**Organization:** SEQUENTIAL
+**Organization:** SEQUENTIAL  
 **Record Format:** Variable Block (RECFM=VB, LRECL=84)
 
 **Log line format:** `{EMP_ID} {MESSAGE}`
@@ -170,53 +93,45 @@ Batch size is 50 (vs 100 in TASK19) — smaller batch = more frequent commits = 
 
 **Expected output:** [DATA/SYNC-LOG-EXPECTED](DATA/SYNC-LOG-EXPECTED)
 
-#### DB2 Table State After Run
+#### TB_EMPLOYEES (DB2 Table) — Synced Employee Data
 
-**Expected query result (15 rows):** [DATA/DB2-TABLE-EXPECTED](DATA/DB2-TABLE-EXPECTED)
+**Expected final state (15 rows):** [DATA/DB2-TABLE-EXPECTED](DATA/DB2-TABLE-EXPECTED)
 
-## Test Results Trace (24 records)
+### Error Handling
 
-| # | ID | Validation | DB2 Action | Log Message |
-|---|---|---|---|---|
-| 1 | 00100 | ✓ | INSERT | INSERT SUCCESS |
-| 2 | 00200 | ✓ | INSERT | INSERT SUCCESS |
-| 3 | 00300 | ✓ | INSERT (STATUS=I) | INSERT SUCCESS |
-| 4 | (blank) | ✗ ID | skip | ID VALIDATION ERROR: ID IS EMPTY |
-| 5 | 00400 | ✓ | INSERT | INSERT SUCCESS |
-| 6 | 00500 | ✗ NAME | skip | VALIDATION ERROR: NAME IS EMPTY (ID=00500) |
-| 7 | 00600 | ✓ | INSERT | INSERT SUCCESS |
-| 8 | 00700 | ✗ SALARY | skip | SALARY VALIDATION ERROR: NON-NUMERIC |
-| 9 | 00800 | ✗ SALARY | skip | SALARY VALIDATION ERROR: ZERO VALUE |
-| 10 | 00900 | ✓ | INSERT | INSERT SUCCESS |
-| 11 | 00100 | ✓ | UPDATE | UPDATE(SALARY CHANGE FROM 5000.00 TO 7500.00) |
-| 12 | 01000 | ✓ | INSERT | INSERT SUCCESS |
-| 13 | 01100 | ✗ SALARY | skip | SALARY VALIDATION ERROR: NON-NUMERIC |
-| 14 | 01200 | ✓ | INSERT | INSERT SUCCESS |
-| 15 | 00200 | ✓ | UPDATE | UPDATE(SALARY CHANGE FROM 4500.00 TO 6500.00) |
-| 16 | 01300 | ✗ STATUS | skip | STATUS VALIDATION ERROR |
-| 17 | 01400 | ✓ | INSERT | INSERT SUCCESS |
-| 18 | 00300 | ✓ | UPDATE | UPDATE(SALARY CHANGE FROM 6000.00 TO 8500.00) |
-| 19 | 01500 | ✓ | INSERT | INSERT SUCCESS |
-| 20 | 01600 | ✓ | INSERT | INSERT SUCCESS |
-| 21 | 01700 | ✓ | INSERT | INSERT SUCCESS |
-| 22 | 01800 | ✓ | INSERT | INSERT SUCCESS |
-| 23 | 01900 | ✓ | INSERT | INSERT SUCCESS |
-| 24 | 02000 | ✓ | INSERT | INSERT SUCCESS |
+**FILE STATUS Codes (INP-FILE and OUT-FILE):**
+- 00 - Successful operation
+- Other codes - I/O errors on open, read, or write (program displays status and STOP RUN)
 
-**Result: 15 inserted, 3 updated, 6 errors — 1 COMMIT batch (18 ops < 50 threshold)**
+CLOSE errors treated as warnings (display only, no STOP RUN).
 
-## TASK19 vs TASK20: DB2 Patterns
+## Program Flow
 
-| Pattern | TASK19 | TASK20 |
-|---|---|---|
-| DML operations | INSERT only | INSERT + UPDATE + SELECT |
-| Upsert logic | No (duplicate = error) | Yes (SELECT → decide) |
-| Old value tracking | No | Yes (HV-OLD-NAME, HV-OLD-SALARY) |
-| Date formatting | No | Yes (YYYYMMDD → YYYY-MM-DD) |
-| Validation fields | 3 (ID, email, phone) | 4 (ID, name, salary, status) |
-| Batch commit size | 100 | 50 |
-| SQLCODE -803 | Handled (duplicate key) | Not needed (upsert prevents it) |
-| VARCHAR columns | 2 (CUST_NAME, EMAIL) | 1 (EMP_NAME) |
+1. **Initialization**
+   - Opens INP-FILE and OUT-FILE; validates FILE STATUS '00' on each
+
+2. **Main Processing Loop**
+   - Reads EMP.UPDATE sequentially until EOF; increments RECORDS-PROCESSED per record
+   - Runs all 4 validations: VALIDATE-ID → VALIDATE-NAME → VALIDATE-SALARY → VALIDATE-STATUS
+   - `WS-ERROR-FIND` flag set on any failure; all errors logged; single ADD 1 TO RECORDS-ERRORS if any failed
+   - If no errors: PERFORM PROCESS-EMPLOYEE → SELECT to check existence → UPDATE or INSERT
+   - After each successful operation: ADD 1 TO COMMIT-COUNTER; if COMMIT-COUNTER ≥ 50 → COMMIT WORK, ADD 1 TO COMMIT-BATCHES, reset counter
+
+3. **Termination**
+   - Final COMMIT if COMMIT-COUNTER > 0; ROLLBACK + STOP RUN if final COMMIT fails
+   - Closes both files (non-zero status on CLOSE is warning only)
+   - Displays summary to SYSOUT: RECORDS PROCESSED / INSERTED / UPDATED / ERRORS / COMMIT BATCHES / UNCOMMITTED RECORDS
+   - STOP RUN
+
+## SQL Scripts
+
+### 1. [CREATE-TABLE.sql](SQL/CREATE-TABLE.sql) - Create Employees Table
+
+Creates TB_EMPLOYEES table with primary key on EMP_ID
+
+### 2. [QUERY-OUTPUT.sql](SQL/QUERY-OUTPUT.sql) - Verify Synced Data
+
+Queries all rows from TB_EMPLOYEES after sync run
 
 ## JCL Jobs
 
@@ -229,58 +144,78 @@ Batch size is 50 (vs 100 in TASK19) — smaller batch = more frequent commits = 
 
 ## How to Run
 
-### Option A: Compile + Run (Recommended)
+### Step 1: Create DB2 Table
 
-**Prerequisites:**
-1. TB_EMPLOYEES table must exist — run [SQL/CREATE-TABLE.sql](SQL/CREATE-TABLE.sql) in SPUFI
-2. Table must be **empty** before first run (otherwise initial inserts will become updates)
-3. Input dataset Z73460.TASK20.EMP.UPDATE allocated and loaded with [DATA/EMP-UPDATE-INPUT](DATA/EMP-UPDATE-INPUT)
+**Execute** [SQL/CREATE-TABLE.sql](SQL/CREATE-TABLE.sql) via SPUFI or QMF
 
-Submit [JCL/COBDB2CP.jcl](JCL/COBDB2CP.jcl)
+### Step 2: Load Input Data
 
-### Option B: Run Only (After Compile)
+**Allocate** and load `EMP.UPDATE` with [DATA/EMP-UPDATE-INPUT](DATA/EMP-UPDATE-INPUT)
 
-Ensure SYNC.LOG deleted, then submit RUNPROG step manually.
+### Step 3: Execute Sync Program
 
-> **Note:** To re-run cleanly, truncate TB_EMPLOYEES first:
+**Submit** [JCL/COBDB2CP.jcl](JCL/COBDB2CP.jcl)  
+**See** [OUTPUT/SYSOUT.txt](OUTPUT/SYSOUT.txt)  
+**Review** [DATA/SYNC-LOG-EXPECTED](DATA/SYNC-LOG-EXPECTED) for expected audit log
+
+### Step 4: Verify Results
+
+**Query synced table:**
+
+- `SELECT EMP_ID, EMP_NAME, DEPT, SALARY, HIRE_DATE, STATUS FROM TB_EMPLOYEES ORDER BY EMP_ID`
+- **Expected:** 15 rows; 00100/00200/00300 show updated salary values
+- **Check SYNC.LOG** — 15 INSERT SUCCESS, 3 UPDATE messages, 6 validation errors
+- **Compare** [DATA/DB2-TABLE-EXPECTED](DATA/DB2-TABLE-EXPECTED) vs actual query result
+
+> **To re-run cleanly**, truncate TB_EMPLOYEES first:
 > ```sql
 > DELETE FROM TB_EMPLOYEES;
 > COMMIT;
 > ```
 
-### Verify Results
+## Common Issues
 
-- Browse SYNC.LOG — compare with [DATA/SYNC-LOG-EXPECTED](DATA/SYNC-LOG-EXPECTED)
-- Run SELECT in SPUFI — compare with [DATA/DB2-TABLE-EXPECTED](DATA/DB2-TABLE-EXPECTED)
-- Check SYSOUT — compare with [OUTPUT/SYSOUT.txt](OUTPUT/SYSOUT.txt)
+### Issue 1: SQLCODE -805 — Package or Plan Not Found
 
-**Expected: 15 rows in TB_EMPLOYEES, 3 with updated salary values**
+**Cause:** DB2CBL proc BIND step failed or was skipped  
+**Solution:** Verify BIND step completed RC=0; check SYSTSPRT output for bind errors
+
+### Issue 2: IKJEFT01 Abend — DB2 Subsystem Not Available
+
+**Cause:** `DSN SYSTEM(DBDG)` cannot attach to DB2 subsystem DBDG  
+**Solution:** Verify DB2 subsystem DBDG is active; confirm subsystem name matches your z/OS installation
+
+### Issue 3: SQLCODE -818 — Timestamp Mismatch
+
+**Cause:** Program recompiled but not rebound — precompile timestamp in load module does not match DBRM  
+**Solution:** DB2CBL proc includes BIND step automatically — verify it ran successfully after recompile
+
+### Issue 4: SYNC.LOG LRECL Mismatch
+
+**Cause:** OUTDD allocated with LRECL=80 instead of LRECL=84 for VB format  
+**Solution:** VB records need 4-byte RDW prefix; LRECL must be data length + 4 = 80 + 4 = 84
+
+### Issue 5: S0C7 on INP-SALARY or HV-SALARY
+
+**Cause:** INP-SALARY field contains non-numeric data — NUMERIC check in VALIDATE-SALARY must run before MOVE to host variable  
+**Solution:** Verify VALIDATE-SALARY runs before PROCESS-EMPLOYEE; confirm PIC S9(5)V99 matches input layout at offset 28
+
+### Issue 6: DATE Conversion Abend
+
+**Cause:** INP-HIRE-DATE contains spaces or non-numeric data — STRING into HV-HIRE-DATE produces invalid ISO date  
+**Solution:** Verify input HIRE_DATE field is exactly 8 numeric digits at offset 35; DB2 rejects malformed date with SQLCODE -180
 
 ## Program Output (SYSOUT)
 
 See [OUTPUT/SYSOUT.txt](OUTPUT/SYSOUT.txt) for execution log.
-
-```
-========================================
-EMPLOYEE UPSERT SUMMARY
-========================================
-RECORDS PROCESSED:      24
-RECORDS INSERTED:       15
-RECORDS UPDATED:         3
-RECORDS ERRORS:          6
-COMMIT BATCHES:          1
-UNCOMMITTED RECORDS:     0
-========================================
-```
 
 ## Notes
 
 - UPSERT pattern: SELECT first, then branch on SQLCODE — avoids duplicate key errors and unnecessary blind UPDATEs
 - `SQLCODE=100` from SELECT means "not found" (same as AT END for cursors) — used here as the INSERT trigger
 - Two sets of host variables needed: `HV-*` for new data, `HV-OLD-*` for SELECT result; mixing them would overwrite old values before comparison
-- DATE host variable stored as `PIC X(10)` (not DATE type in COBOL) — DB2 accepts ISO string `YYYY-MM-DD` directly
-- `WS-ERROR-FIND` flag approach: all 4 validations run, flag is set on first failure — this logs all validation errors per record, not just the first one
-- Batch size 50 (vs 100 in TASK19): for mixed INSERT/UPDATE workloads with potential conflicts, smaller batches reduce rollback exposure
-- `COND=(4,LT)` on RUNPROG ensures execution only after successful compile
-- No VSAM, no sort — pure DB2 DML with PS I/O
+- DATE host variable stored as `PIC X(10)` — DB2 accepts ISO string `YYYY-MM-DD` directly for DATE columns
+- `WS-ERROR-FIND` flag approach: all 4 validations run, flag set on any failure — logs all errors per record, not just the first
+- Batch size 50 (vs 100 in TASK19): for mixed INSERT/UPDATE workloads, smaller batches reduce rollback exposure
+- DB2 precompiler converts `EXEC SQL` blocks into COBOL `CALL` statements before standard COBOL compile — this is why `DB2CBL` proc is needed instead of `MYCOMPGO`
 - Tested on IBM z/OS with DB2 subsystem DBDG and Enterprise COBOL
