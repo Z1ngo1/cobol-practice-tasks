@@ -1,0 +1,24 @@
+00100 INSERT SUCCESS                                                            
+00200 INSERT SUCCESS                                                            
+00300 INSERT SUCCESS                                                            
+      ID VALIDATION ERROR: ID IS EMPTY                                          
+00400 INSERT SUCCESS                                                            
+00500 VALIDATION ERROR: NAME IS EMPTY (ID=00500)                                
+00600 INSERT SUCCESS                                                            
+00700 SALARY VALIDATION ERROR: NON-NUMERIC                                      
+00800 SALARY VALIDATION ERROR: ZERO VALUE                                       
+00900 INSERT SUCCESS                                                            
+00100 UPDATE(SALARY CHANGE FROM 5000.00 TO 7500.00)                             
+01000 INSERT SUCCESS                                                            
+01100 SALARY VALIDATION ERROR: NON-NUMERIC                                      
+01200 INSERT SUCCESS                                                            
+00200 UPDATE(SALARY CHANGE FROM 4500.00 TO 6500.00)                             
+01300 STATUS VALIDATION ERROR                                                   
+01400 INSERT SUCCESS                                                            
+00300 UPDATE(SALARY CHANGE FROM 6000.00 TO 8500.00)                             
+01500 INSERT SUCCESS                                                            
+01600 INSERT SUCCESS                                                            
+01700 INSERT SUCCESS                                                            
+01800 INSERT SUCCESS                                                            
+01900 INSERT SUCCESS                                                            
+02000 INSERT SUCCESS                                                            
