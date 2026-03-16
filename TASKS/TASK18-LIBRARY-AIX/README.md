@@ -35,12 +35,12 @@ The AIX requires four IDCAMS steps in sequence. Each is provided both as a stand
 
 | Step | JCL File | IDCAMS Command | Purpose |
 |---|---|---|---|
-| 1 | [IDCAMS-DEFINE-CLUSTER.jcl](JCL/IDCAMS-DEFINE-CLUSTER.jcl) | DEFINE CLUSTER | Create KSDS base cluster |
-| 2 | [IDCAMS-DEFINE-AIX.jcl](JCL/IDCAMS-DEFINE-AIX.jcl) | DEFINE AIX | Define alternate index structure |
-| 3 | [IDCAMS-DEFINE-PATH.jcl](JCL/IDCAMS-DEFINE-PATH.jcl) | DEFINE PATH | Link AIX to base cluster |
-| 4 | [IDCAMS-BLDINDEX.jcl](JCL/IDCAMS-BLDINDEX.jcl) | BLDINDEX | Populate AIX from existing data |
+| 1 | [DEFKSDS.jcl](JCL/DEFKSDS.jcl) | DEFINE CLUSTER | Create KSDS base cluster |
+| 2 | [DEFAIX.jcl](JCL/DEFAIX.jcl) | DEFINE AIX | Define alternate index structure |
+| 3 | [DEFPATH.jcl](JCL/DEFPATH.jcl) | DEFINE PATH | Link AIX to base cluster |
+| 4 | [BLDINDX.jcl](JCL/BLDINDX.jcl) | BLDINDEX | Populate AIX from existing data |
 
-> **Recommended:** Use [JCL/ALL-STEPS.jcl](JCL/ALL-STEPS.jcl) which runs all setup steps plus compile and run in one job with COND=(04,LT) chaining.
+> **Recommended:** Use [JCL/ALLSTEPS.jcl](JCL/ALLSTEPS.jcl) which runs all setup steps plus compile and run in one job with COND=(04,LT) chaining.
 
 ## Files
 
@@ -61,7 +61,7 @@ The AIX requires four IDCAMS steps in sequence. Each is provided both as a stand
 | VSAM-TITLE | X(30) | 30 | 30 | Book title |
 | VSAM-YEAR | X(4) | 4 | 60 | Publication year |
 
-**Initial Data (14 books):** [DATA/LIBRARY-MASTER-INPUT](DATA/LIBRARY-MASTER-INPUT)
+**Initial Data (14 books):** [DATA/LIBRARY.MASTER.VSAM](DATA/LIBRARY.MASTER.VSAM)
 
 #### 2. LIBRARY.MASTER.VSAM.AIX - Alternate Index
 
@@ -85,7 +85,7 @@ Links AIX to base cluster. Used as DD VSAMDD1 alongside VSAMDD (base cluster) �
 |---|---|---|---|
 | SEARCH-AUTHOR | X(20) | 20 | Author name to search |
 
-**Sample Data:** [DATA/SEARCH-REQ-INPUT](DATA/SEARCH-REQ-INPUT)
+**Sample Data:** [DATA/SEARCH.REQ](DATA/SEARCH.REQ)
 
 ### PS Output File
 
@@ -102,7 +102,7 @@ Links AIX to base cluster. Used as DD VSAMDD1 alongside VSAMDD (base cluster) �
 - Not found: `     NOT FOUND` — written when author has no books
 - Separator: `----------------------------------------` — written after each author block
 
-**Expected Output:** [DATA/RESULT-REPORT-EXPECTED](DATA/RESULT-REPORT-EXPECTED)
+**Expected Output:** [DATA/RESULT.RPT](DATA/RESULT.RPT)
 
 ### Error Handling
 
@@ -166,16 +166,16 @@ CLOSE errors treated as warnings (display only, no STOP RUN).
 
 ### Option A: Full Reset (Recommended First Time)
 
-**Submit** [JCL/ALL-STEPS.jcl](JCL/ALL-STEPS.jcl) — runs complete setup + compile + run in one job
+**Submit** [JCL/ALLSTEPS.jcl](JCL/ALLSTEPS.jcl) — runs complete setup + compile + run in one job
 
 ### Option B: Step-by-Step Manual Setup
 
 Submit individual JCL files in this exact order:
 
-1. [JCL/IDCAMS-DEFINE-CLUSTER.jcl](JCL/IDCAMS-DEFINE-CLUSTER.jcl) — define and load KSDS
-2. [JCL/IDCAMS-DEFINE-AIX.jcl](JCL/IDCAMS-DEFINE-AIX.jcl) — define AIX structure
-3. [JCL/IDCAMS-DEFINE-PATH.jcl](JCL/IDCAMS-DEFINE-PATH.jcl) — define PATH
-4. [JCL/IDCAMS-BLDINDEX.jcl](JCL/IDCAMS-BLDINDEX.jcl) — build (populate) AIX
+1. [JCL/DEFKSDS.jcl](JCL/DEFKSDS.jcl) — define and load KSDS
+2. [JCL/DEFAIX.jcl](JCL/DEFAIX.jcl) — define AIX structure
+3. [JCL/DEFPATH.jcl](JCL/DEFPATH.jcl) — define PATH
+4. [JCL/BLDINDX.jcl](JCL/BLDINDX.jcl) — build (populate) AIX
 5. [JCL/COMPRUN.jcl](JCL/COMPRUN.jcl) — compile and run COBOL program
 
 **Alternative:** If you prefer to compile and run separately, use these jobs instead of COMPRUN.jcl:
