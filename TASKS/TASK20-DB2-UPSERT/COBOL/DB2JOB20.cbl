@@ -192,7 +192,7 @@
                    PERFORM VALIDATE-ID                                  
                    PERFORM VALIDATE-NAME                                
                    PERFORM  VALIDATE-SALARY                             
-                   PERFORM VALIDATE-STATUSS                             
+                   PERFORM VALIDATE-STATUS                             
                    IF WS-ERROR-FIND = 'Y'                               
                       ADD 1 TO RECORDS-ERRORS                           
                    ELSE                                                 
@@ -267,7 +267,7 @@
       **********************************************                    
       * VALIDATE STATUS CHECK 'A' OR 'I' ONLY                           
       **********************************************                    
-       VALIDATE-STATUSS.                                                
+       VALIDATE-STATUS.                                                
            IF INP-STATUS NOT = 'A' AND INP-STATUS NOT = 'I'             
               SET ERROR-FIND TO TRUE                                    
               MOVE 'STATUS VALIDATION ERROR' TO WS-OUT-MSG              
