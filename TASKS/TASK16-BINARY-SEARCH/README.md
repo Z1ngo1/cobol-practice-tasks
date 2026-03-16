@@ -53,7 +53,7 @@ END-PERFORM.
 | PART-ID | 9(5) | 5 | Part number (binary search key) |
 | PART-PRICE | 9(3)V99 | 5 | Unit price (implied decimal) |
 
-**Sample Data:** [DATA/PARTS-CATALOG-INPUT](DATA/PARTS-CATALOG-INPUT)
+**Sample Data:** [DATA/PARTS.CATALOG](DATA/PARTS.CATALOG)
 
 #### 2. ORDERS.FILE (PS) - Customer Orders File
 
@@ -69,7 +69,7 @@ END-PERFORM.
 | ORDR-ID | 9(5) | 5 | Part ID to look up in catalog |
 | ORDR-QUANT | 9(3) | 3 | Quantity ordered |
 
-**Sample Data:** [DATA/ORDERS-INPUT](DATA/ORDERS-INPUT)
+**Sample Data:** [DATA/ORDERS.FILE](DATA/ORDERS.FILE)
 
 ### Output Files
 
@@ -79,7 +79,7 @@ END-PERFORM.
 **Organization:** SEQUENTIAL  
 **Record Format:** Fixed Block (RECFM=FB, LRECL=80)  
 
-**Expected Output:** [DATA/INVOICE-EXPECTED](DATA/INVOICE-EXPECTED)
+**Expected Output:** [DATA/INVOICE.TXT](DATA/INVOICE.TXT)
 
 ### Error Handling
 
@@ -124,7 +124,7 @@ Standard compile-link-go JCL using MYCOMPGO procedure
 
 ### Step 1: Allocate and Load Parts Catalog File
 
-Upload [DATA/PARTS-CATALOG-INPUT](DATA/PARTS-CATALOG-INPUT) to PS dataset manually via ISPF
+Upload [DATA/PARTS.CATALOG](DATA/PARTS.CATALOG) to PS dataset manually via ISPF
 
 **Alternative:**
 1. Create PS file with LRECL=80 and insert inline data using IEBGENER:
@@ -133,7 +133,7 @@ Upload [DATA/PARTS-CATALOG-INPUT](DATA/PARTS-CATALOG-INPUT) to PS dataset manual
 
 ### Step 2: Allocate and Load Orders File
 
-Upload [DATA/ORDERS-INPUT](DATA/ORDERS-INPUT) to PS dataset manually via ISPF
+Upload [DATA/ORDERS.FILE](DATA/ORDERS.FILE) to PS dataset manually via ISPF
 
 **Alternative:**
 1. Create PS file with LRECL=80 and insert inline data using IEBGENER:
@@ -144,7 +144,7 @@ Upload [DATA/ORDERS-INPUT](DATA/ORDERS-INPUT) to PS dataset manually via ISPF
 
 **Submit** [JCL/COMPRUN.jcl](JCL/COMPRUN.jcl)  
 **See** [OUTPUT/SYSOUT.txt](OUTPUT/SYSOUT.txt) for execution summary  
-**Review** [DATA/INVOICE-EXPECTED](DATA/INVOICE-EXPECTED) for expected invoice output 
+**Review** [DATA/INVOICE.TXT](DATA/INVOICE.TXT) for expected invoice output 
 
 **Alternative:**
 If you prefer to compile and run separately, use these jobs:
