@@ -1,4 +1,4 @@
-//JOB18   JOB (123),'COB COMPILE',CLASS=A,MSGCLASS=A,MSGLEVEL=(1,1),
+//JCLCOMP  JOB (123),'COB COMPILE',CLASS=A,MSGCLASS=A,MSGLEVEL=(1,1),
 //             NOTIFY=&SYSUID
 //*==================================================================
 //* COMPILE AND LINK EDIT STEP - IGYWCL PROCEDURE COMBINES BOTH
