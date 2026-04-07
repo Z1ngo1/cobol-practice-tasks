@@ -1,0 +1,11 @@
+ ========================================
+ MASTER FILE UPDATE SUMMARY              
+ ========================================
+ OLD MASTER RECORDS READ:      7         
+ TRANSACTIONS PROCESSED:      15         
+ NEW MASTER RECORDS:           9         
+ ADDED:                        4         
+ UPDATED:                      6         
+ DELETED:                      2         
+ ERRORS LOGGED:                3         
+ ========================================
