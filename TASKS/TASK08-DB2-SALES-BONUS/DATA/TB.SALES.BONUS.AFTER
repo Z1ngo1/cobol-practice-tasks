@@ -1,0 +1,18 @@
+-- TASK 8: QUERY OUTPUT DATA
+
+---------+---------+---------+---------+---------+---------+---------+---------+
+EMP_ID  EMP_NAME                        REGION_CODE     YEAR_SALES    BONUS_AMT 
+---------+---------+---------+---------+---------+---------+---------+---------+
+000101  ALEX IVANOV                     EU                80000.00      1680.00 
+000102  MARIA PETROVA                   EU               180000.00      3528.00 
+000103  JOHN SMITH                      NE               200000.00     11550.00 
+000104  LEE CHANG                       AS               250000.00     20000.00 
+000105  CARLOS DIAZ                     SW                40000.00      1890.00 
+000106  EMMA WILSON                     NE               120000.00      5500.00 
+000107  YUKI TANAKA                     AS               150000.00      9072.00 
+000108  PIERRE DUBOIS                   EU               300000.00     20000.00 
+000109  MIGUEL RODRIGUEZ                SW               160000.00      4410.00 
+000110  SARAH BROWN                     NE                90000.00      1100.00 
+DSNE610I NUMBER OF ROWS DISPLAYED IS 10                                         
+DSNE616I STATEMENT EXECUTION WAS SUCCESSFUL, SQLCODE IS 100                     
+---------+---------+---------+---------+---------+---------+---------+---------+
