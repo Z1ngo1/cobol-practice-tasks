@@ -9,7 +9,6 @@
       *   DEPOSIT  (D): NEW-BAL = CURRENT-BAL + AMOUNT                 *
       *   WITHDRAW (W): IF BAL >= AMOUNT -> SUBTRACT, REWRITE          *
       *                 ELSE             -> REJECT, WRITE ERROR        *
-      *       ELSE REJECT (INSUFFICIENT FUNDS)                         *
       *   ACCT NOT FOUND                 -> REJECT, WRITE ERROR        *
       *                                                                *
       * AUTHOR: STANISLAV                                              *
@@ -154,7 +153,10 @@
       * RANDOM READ VSAM BY ACCT-ID.                                    
       * STATUS '23' (NOT FOUND) -> WRITE ERROR RECORD AND EXIT.         
       * FOUND -> APPLY DEPOSIT OR WITHDRAWAL,                           
-      * THEN REWRITE UPDATED RECORD TO VSAM.                            
+      * THEN REWRITE UPDATED RECORD TO VSAM.
+      * NOTE: UNKNOWN TRANS-TYPE (NOT 'D' OR 'W')
+      *       IS SILENTLY IGNORED - NO UPDATE,
+      *       NO ERROR LOGGED. ADD VALIDATION IF NEEDED.
       **********************************************                    
        PROCESS-TRANSACTION.                                             
            SET NOT-FOUND TO TRUE.                                       
