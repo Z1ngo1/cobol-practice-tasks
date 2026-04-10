@@ -1,0 +1,24 @@
+00100 INSERTED (NEW EMPLOYEE)                                                   
+00200 INSERTED (NEW EMPLOYEE)                                                   
+00300 INSERTED (NEW EMPLOYEE)                                                   
+      ID VALIDATION ERROR: ID IS EMPTY                                          
+00400 INSERTED (NEW EMPLOYEE)                                                   
+00500 VALIDATION ERROR: NAME IS EMPTY (ID=00500)                                
+00600 INSERTED (NEW EMPLOYEE)                                                   
+00700 SALARY VALIDATION ERROR: NON-NUMERIC                                      
+00800 SALARY VALIDATION ERROR: ZERO VALUE                                       
+00900 INSERTED (NEW EMPLOYEE)                                                   
+00100 UPDATE (SALARY CHANGE FROM 5000.00 TO 7500.00)                            
+01000 INSERTED (NEW EMPLOYEE)                                                   
+01100 SALARY VALIDATION ERROR: NON-NUMERIC                                      
+01200 INSERTED (NEW EMPLOYEE)                                                   
+00200 UPDATE (SALARY CHANGE FROM 4500.00 TO 6500.00)                            
+01300 STATUS VALIDATION ERROR                                                   
+01400 INSERTED (NEW EMPLOYEE)                                                   
+00300 UPDATE (SALARY CHANGE FROM 6000.00 TO 8500.00)                            
+01500 INSERTED (NEW EMPLOYEE)                                                   
+01600 INSERTED (NEW EMPLOYEE)                                                   
+01700 INSERTED (NEW EMPLOYEE)                                                   
+01800 INSERTED (NEW EMPLOYEE)                                                   
+01900 INSERTED (NEW EMPLOYEE)                                                   
+02000 INSERTED (NEW EMPLOYEE)                                                   
