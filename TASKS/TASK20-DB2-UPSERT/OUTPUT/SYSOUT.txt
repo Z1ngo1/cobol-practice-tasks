@@ -1,0 +1,9 @@
+ ========================================
+ EMPLOYEE UPSERT SUMMARY                 
+ ========================================
+ RECORDS PROCESSED:      24              
+ RECORDS INSERTED:       15              
+ RECORDS UPDATED:         3              
+ RECORDS ERRORS:          6              
+ COMMIT BATCHES:          1                      
+ ========================================
