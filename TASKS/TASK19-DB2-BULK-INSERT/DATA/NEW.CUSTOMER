@@ -1,0 +1,20 @@
+000100NEW CUSTOMER ONE              email1@test.com                         55551234560100000
+000200NEW CUSTOMER TWO              invalid.email.noat                      55551234570150000
+000300NEW CUSTOMER THREE            email3@test.com                         5555      0200000
+000400ALICE WONDERLAND              alice@example.com                       55559876540250000
+      EMPTY ID CUSTOMER             emptyid@test.com                        55551111110050000
+000600BOB BUILDER PRO               bob.builder@company.com                 55552222220300000
+000100DUPLICATE ID ATTEMPT          duplicate@test.com                      55553333330075000
+000700CHARLIE CHAPLIN               charlie@movies.com                      555PHONE770400000
+000800DAVID BECKHAM                 david@@double.at.email.com              55554444440450000
+000900EMMA WATSON ACTRESS           emma.watson@hollywood.com               55556666660500000
+001000FRANK SINATRA SINGER          frank@music.com                         0550000          
+001100GRACE KELLY PRINCESS          grace.kelly@monaco.mc                   55557777770600000
+001200HENRY FORD FOUNDER            henryford.notemail.com                  55558888880650000
+001300IRENE CURIE SCIENTIST         irene.curie@science.fr                  55559999990700000
+000400ALICE DUPLICATE KEY           alice.dup@test.com                      55551122330750000
+001400JACK LONDON WRITER            jack.london@books.com                   55553344550800000
+001500KATE WINSLET STAR             kate@films.com                          55512345678085000
+001600LARRY PAGE GOOGLE             larry@google.com                        55556677880900000
+001700MARY SHELLEY AUTHOR           mary.shelley@literature.uk              55559988770950000
+      NULL ID RECORD                nullid@final.test                       55551010100025000
