@@ -4,6 +4,5 @@
  RECORDS PROCESSED:      20              
  RECORDS INSERTED:       10              
  RECORDS ERRORS:         10              
- COMMIT BATCHES:          1              
- UNCOMMITTED RECORDS:     0              
+ COMMIT BATCHES:          1                 
  ========================================
