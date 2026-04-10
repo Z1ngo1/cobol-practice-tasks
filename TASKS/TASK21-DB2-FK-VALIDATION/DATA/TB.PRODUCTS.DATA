@@ -1,0 +1,11 @@
+-- TASK 21: QUERY INITIAL DATA
+
+---------+---------+---------+---------+---------+---------+---------+---------+
+PROD_ID  PROD_NAME                       UNIT_PRICE    STOCK_QTY                
+---------+---------+---------+---------+---------+---------+---------+---------+
+00100    LAPTOP PRO                           50.00         1000                
+00200    WIRELESS MOUSE                      100.00          500                
+00300    USB HUB                              25.00          300                
+DSNE610I NUMBER OF ROWS DISPLAYED IS 3                                          
+DSNE616I STATEMENT EXECUTION WAS SUCCESSFUL, SQLCODE IS 100                     
+---------+---------+---------+---------+---------+---------+---------+---------+
