@@ -229,7 +229,7 @@
                 AT END
                    SET VSAM-EOF TO TRUE
                 NOT AT END
-                   IF VSAM-STATUS NOT = '00' AND VSAM-STATUS NOT = '10'
+                   IF VSAM-STATUS NOT = '00' 
                       DISPLAY 'ERROR READING VSAM FILE: ' VSAM-STATUS
                       STOP RUN
                    END-IF
