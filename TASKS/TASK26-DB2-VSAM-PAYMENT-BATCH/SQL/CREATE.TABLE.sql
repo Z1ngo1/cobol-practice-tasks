@@ -1,0 +1,9 @@
+-- TASK 26: Robust Batch Processing
+-- CREATE TB_CUSTOMER_BALANCE
+
+CREATE TABLE TB_CUSTOMER_BALANCE (     
+   CUST_ID CHAR(5) NOT NULL,           
+   CUST_BALANCE DECIMAL(9,2),          
+   LAST_PAYMENT TIMESTAMP WITH DEFAULT,
+   PRIMARY KEY (CUST_ID)               
+) IN DATABASE Z73460;                  
