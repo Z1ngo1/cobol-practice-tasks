@@ -1,0 +1,13 @@
+100001 SUCCESS: PAYMENT PROCESSED                                               
+100002 SUCCESS: PAYMENT PROCESSED                                               
+100003 NOT FOUND: CUSTOMER ID 00999                                             
+100004 VALIDATION ERROR: INVALID PAYMENT RECORD                                 
+100005 ACCOUNT SUSPENDED: PAYMENT REJECTED                                      
+       VALIDATION ERROR: INVALID PAYMENT RECORD                                 
+100006 VALIDATION ERROR: INVALID PAYMENT RECORD                                 
+-------------------------------------                                           
+TOTAL PROCESSED: 7                                                              
+SUCCESSFUL: 2                                                                   
+ERRORS: 0                                                                       
+SKIPPED: 5                                                                      
+RETURN CODE:   0                                                                
