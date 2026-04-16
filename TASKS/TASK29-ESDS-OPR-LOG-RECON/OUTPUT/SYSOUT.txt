@@ -1,0 +1,9 @@
+ ========================================
+ OPERATION SUMMARY                       
+ ========================================
+ TOTAL OPERATIONS READ:     9            
+ OPERATIONS OK:             3            
+ OPERATIONS ERROR:          5            
+ OPERATIONS SKIPPED:        1            
+ RECORDS WRITTEN:           9            
+ ========================================
