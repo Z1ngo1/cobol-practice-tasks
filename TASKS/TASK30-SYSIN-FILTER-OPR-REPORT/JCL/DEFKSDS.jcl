@@ -1,8 +1,16 @@
 //DEFKSDS  JOB (123),'IDCAMS',CLASS=A,MSGCLASS=A,MSGLEVEL=(1,1),        
 //             NOTIFY=&SYSUID                                           
-//*                                                                     
+//*=====================================================================
+//* STEP 1: DELETE OLD VSAM CLUSTER (IF EXISTS)
+//*=====================================================================
+//DELETE   EXEC PGM=IDCAMS
+//SYSPRINT DD SYSOUT=*
+//SYSIN    DD *
+  DELETE Z73460.TASK30.OPR.LOG.KSDS PURGE CLUSTER
+  SET MAXCC=0
+/*                                                                   
 //************************************************************          
-//* DEFINE VSAM KSDS CLUSTER                                            
+//* STEP 2: DEFINE VSAM KSDS CLUSTER                                            
 //************************************************************          
 //STEP10   EXEC PGM=IDCAMS                                              
 //SYSPRINT DD SYSOUT=*                                                  
