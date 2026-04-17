@@ -1,0 +1,17 @@
+                                                                                
+                     ACTIVE CUSTOMERS BY REGION AND SEGMENT.                    
+                                                                                
+                                                                                
+                       CUSTOMET                                                 
+   REGION  SEGMENT      COUNT                                                   
+   ------  -------  -----------                                                 
+   AS      C                  6                                                 
+   AS      R                 10                                                 
+   EU      C                  6                                                 
+   EU      R                 10                                                 
+   NE      C                  9                                                 
+   NE      R                 16                                                 
+   SW      C                  9                                                 
+   SW      R                 14                                                 
+   ======                                                                       
+        8                                                                       
