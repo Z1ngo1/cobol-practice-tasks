@@ -1,0 +1,27 @@
+ FORM.MAIN          Z73460.Q1TASK31F                                            
+                                                                                
+ COLUMNS:               Total Width of Report Columns: 30                       
+  NUM COLUMN HEADING                           USAGE   INDENT WIDTH EDIT  SEQ   
+  --- ---------------------------------------- ------- ------ ----- ----- ---   
+    1 REGION                                   COUNT   2      6     C     1     
+    2 SEGMENT                                          2      7     C     2     
+    3 CUSTOMET_COUNT                                   2      11    L     3     
+      *** END ***                                                               
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ PAGE:    HEADING  ===> ACTIVE CUSTOMERS BY REGION AND SEGMENT.                 
+          FOOTING  ===>                                                         
+ FINAL:   TEXT     ===> TOTAL REGION                                            
+ BREAK1:  NEW PAGE FOR BREAK? ===> NO                                           
+          FOOTING  ===>                                                         
+ BREAK2:  NEW PAGE FOR BREAK? ===> NO                                           
+          FOOTING  ===>                                                         
+ OPTIONS: OUTLINE? ===> YES                DEFAULT BREAK TEXT? ===> YES         
