@@ -115,38 +115,6 @@ Input data and expected output are stored in the [`DATA/`](DATA/) folder:
 | [`DATA/ORDERS.DAILY`](DATA/ORDERS.DAILY) | 12 order records (10 valid, 2 with unknown product IDs) |
 | [`DATA/INVOICE.FILE`](DATA/INVOICE.FILE) | Expected invoice output — 10 enriched lines |
 
-### Product Master (VSAM)
-
-| PRODUCT-ID | PRODUCT-NAME | UNIT-PRICE |
-|---|---|---|
-| `00100` | `APPLE GREEN` | 20.50 |
-| `00200` | `BANANA` | 10.00 |
-| `00300` | `CHERRY PIE` | 150.00 |
-| `00400` | `ORANGE JUICE` | 35.00 |
-| `00500` | `MILK WHOLE` | 22.50 |
-| `00600` | `LAPTOP DELL` | 12000.00 |
-| `00700` | `SMARTPHONE SAMSUNG` | 8500.00 |
-| `00800` | `HEADPHONES SONY` | 250.00 |
-| `00900` | `MOUSE LOGITECH` | 15.00 |
-| `01000` | `KEYBOARD MECHANICAL` | 450.00 |
-
-### Orders Input (`ORDD`)
-
-| ORDER-ID | PRODUCT-ID | QTY | Result |
-|---|---|---|---|
-| `10001` | `00100` | 10 | ✅ Found |
-| `10002` | `00200` | 5 | ✅ Found |
-| `10003` | `00300` | 1 | ✅ Found |
-| `10004` | `00400` | 25 | ✅ Found |
-| `10005` | `00500` | 50 | ✅ Found |
-| `10006` | `99999` | 1 | ❌ Not found — skipped |
-| `10007` | `00600` | 2 | ✅ Found |
-| `10008` | `00700` | 1 | ✅ Found |
-| `10009` | `00800` | 10 | ✅ Found |
-| `10010` | `88888` | 3 | ❌ Not found — skipped |
-| `10011` | `00900` | 15 | ✅ Found |
-| `10120` | `01000` | 20 | ✅ Found |
-
 ---
 
 ## Expected SYSOUT
@@ -165,31 +133,15 @@ TOTAL ERRORS:               2
 ========================================
 ```
 
-### Expected Invoice Output (`OUTDD`)
-
-```
-10001 APPLE GREEN          010    205.00
-10002 BANANA               005     50.00
-10003 CHERRY PIE           001    150.00
-10004 ORANGE JUICE         025    875.00
-10005 MILK WHOLE           050   1125.00
-10007 LAPTOP DELL          002  24000.00
-10008 SMARTPHONE SAMSUNG   001   8500.00
-10009 HEADPHONES SONY      010   2500.00
-10011 MOUSE LOGITECH       015    225.00
-10120 KEYBOARD MECHANICAL  020   9000.00
-```
-
-Orders `10006` and `10010` are absent — their product IDs (`99999`, `88888`) did not exist in the VSAM master.
-
 ---
 
 ## How to Run
 
-1. **Define and load the VSAM cluster** — use JCL in [`JCL/`](JCL/) to define `PROD.MASTER` and load test data from [`DATA/PROD.MASTER.VSAM`](DATA/PROD.MASTER.VSAM)
-2. **Compile and run** — submit [`JCL/COMPRUN.jcl`](JCL/COMPRUN.jcl)
+1. **Define VSAM cluster** — run [`JCL/DEFKSDS.jcl`](JCL/DEFKSDS.jcl)
+2. **Load initial master data** — load `PROD.MASTER.VSAM` into the KSDS cluster either via REPRO (see [`DATAVSAM.jcl`](../../JCL%20SAMPLES/DATAVSAM.jcl)) or manually through **File Manager** in ISPF
+3. **Compile and run** — run [`JCL/COMPRUN.jcl`](JCL/COMPRUN.jcl)
 
-> **PROC reference:** `COMPRUN.jcl` uses the [`MYCOMP`](../../JCLPROC/MYCOMP.jcl) catalogued procedure for compilation and execution. Make sure `MYCOMP` is available in your system's `PROCLIB` before submitting.
+> **PROC reference:** `COMPRUN.jcl` uses the [`MYCOMPGO`](../../JCLPROC/MYCOMPGO.jcl) catalogued procedure for compilation and execution. Make sure `MYCOMPGO` is available in your system's `PROCLIB` before submitting.
 
 ---
 
