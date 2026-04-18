@@ -153,8 +153,6 @@ TOTAL:    10 ROWS UPDATED
 2. **Load test data** - run [`SQL/INSERT.DATA.sql`](SQL/INSERT.DATA.sql) via SPUFI or DSNTEP2
 3. **Compile and run** - run [`JCL/COBDB2CP.jcl`](JCL/COBDB2CP.jcl)
 
-> **PROC reference:** `COBDB2CP.jcl` uses the [`MYCOMPGO`](../../JCLPROC/MYCOMPGO.jcl) catalogued procedure for compilation and execution. Make sure `MYCOMPGO` is available in your system's `PROCLIB` before submitting.
-
 ---
 
 ## Key COBOL/DB2 Concepts Used
