@@ -141,9 +141,7 @@ TOTAL:  10 RECORDS UPDATED
 
 1. **Create DB2 table** — run [`SQL/CREATE.TABLE.sql`](SQL/CREATE.TABLE.sql) via SPUFI or DSNTEP2
 2. **Load test data** — run [`SQL/INSERT.DATA.sql`](SQL/INSERT.DATA.sql) via SPUFI or DSNTEP2
-3. **Compile and run** — run [`JCL/COMPRUN.jcl`](JCL/COMPRUN.jcl)
-
-> **PROC reference:** `COMPRUN.jcl` uses the [`MYCOMPGO`](../../JCLPROC/MYCOMPGO.jcl) catalogued procedure for compilation and execution. Make sure `MYCOMPGO` is available in your system's `PROCLIB` before submitting.
+3. **Compile and run** — run [`JCL/COBDB2CP.jcl`](JCL/COBDB2CP.jcl)
 
 ---
 
