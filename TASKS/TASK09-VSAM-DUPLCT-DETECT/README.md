@@ -118,29 +118,13 @@ SUSPICIOUS RECORDS FOUND:      8
 ========================================
 ```
 
-### Expected Report (`REPDD`)
-
-```
-000101 IVANOV IVAN                    19991201 AB1234567
-000103 IVANOV IVAN                    19991201 ZZ9999999
-000109 IVANOV IVAN                    19991201 CD9876543
-000102 POPOVA ANNA                    19870305 OP5555555
-000106 POPOVA ANNA                    19870305 MN4444444
-000110 POPOVA ANNA                    19870305 QR6666666
-000105 SMIRNOVA MARIA                 20010415 GH1111111
-000108 SMIRNOVA MARIA                 20010415 IJ2222222
-```
-
-Groups are written in sort order (`NAME ASC, BIRTH ASC, ID ASC`). Records with unique name+birth combinations (`PETROV`, `KUZNETSOV`) are not included in the report.
-
----
-
 ## How to Run
 
-1. **Define and load the VSAM cluster** — use JCL in [`JCL/`](JCL/) to define `CLIENT.MASTER.FILE` and load test data from [`DATA/CLIENT.MAST.VSAM`](DATA/CLIENT.MAST.VSAM)
-2. **Compile and run** — run [`JCL/COMPRUN.jcl`](JCL/COMPRUN.jcl)
+1. **Define VSAM cluster** — run [`JCL/DEFKSDS.jcl`](JCL/DEFKSDS.jcl)
+2. **Load initial master data** — load `CLIENT.MASTER.VSAM` into the KSDS cluster either via REPRO (see [`DATAVSAM.jcl`](../../JCL%20SAMPLES/DATAVSAM.jcl)) or manually through **File Manager** in ISPF 
+3. **Compile and run** — run [`JCL/COMPRUN.jcl`](JCL/COMPRUN.jcl)
 
-> **PROC reference:** `COMPRUN.jcl` uses the [`MYCOMP`](../../JCLPROC/MYCOMP.jcl) catalogued procedure for compilation and execution. Make sure `MYCOMP` is available in your system’s `PROCLIB` before submitting.
+> **PROC reference:** `COMPRUN.jcl` uses the [`MYCOMPGO`](../../JCLPROC/MYCOMPGO.jcl) catalogued procedure for compilation and execution. Make sure `MYCOMPGO` is available in your system's `PROCLIB` before submitting.
 
 ---
 
@@ -154,6 +138,17 @@ Groups are written in sort order (`NAME ASC, BIRTH ASC, ID ASC`). Records with u
 - Control-break pattern — key-change detection (`IF NAME = CURRENT AND BIRTH = CURRENT`) with end-of-file flush of the last group; classic batch accumulation technique
 - `SORT-RETURN` — system field set by COBOL after `SORT`; `0` = success, non-zero = failure
 - `ACCESS MODE IS SEQUENTIAL` on KSDS — reads records in primary key order; combined with the sort, guarantees deterministic output order
+
+---
+
+## Known Limitations
+
+- **Group buffer capped at 50 records** — if a duplicate group contains more than 50 entries,
+  excess records are silently excluded from `REPDD`. A `WARNING: GROUP BUFFER OVERFLOW` message
+  is printed to SYSOUT, but the job continues. `TOTAL-DUPS` will be understated in this case.
+- **`SUSPICIOUS RECORDS FOUND` counts all records in a group, not just the extras** — for a
+  group of 3 identical clients, the counter increments by 3 (not 2). This is by design: the
+  report shows all members of a duplicate group so an analyst can review every record.
 
 ---
 
