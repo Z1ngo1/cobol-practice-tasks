@@ -8,7 +8,7 @@ No VSAM, no DB2 — pure sequential processing with two simultaneous read cursor
 
 ---
 
-## ⚠️ Critical Prerequisite: Both Files Must Be Pre-Sorted
+## Critical Prerequisite: Both Files Must Be Pre-Sorted
 
 > **Both `OLD.MASTER` and `TRANS.FILE` must be sorted by ID (ascending) before this program runs.**
 
@@ -213,7 +213,9 @@ All input and expected output files are in the [`DATA/`](DATA/) folder.
 
 ---
 
-## Run Statistics (SYSOUT)
+## Expected SYSOUT
+
+Actual job output is stored in [`OUTPUT/SYSOUT.txt`](OUTPUT/SYSOUT.txt).
 
 ```
 ========================================
@@ -233,10 +235,10 @@ ERRORS LOGGED:                3
 
 ## How to Run
 
-1. Upload [`DATA/OLD.MASTER`](DATA/OLD.MASTER) and [`DATA/TRANS.FILE`](DATA/TRANS.FILE) to your mainframe datasets
-2. Submit [`JCL/COMPRUN.jcl`](JCL/COMPRUN.jcl)
+1. Upload [`DATA/OLD.MASTER`](DATA/OLD.MASTER) and [`DATA/TRANS.FILE`](DATA/TRANS.FILE) to your mainframe datasets manually through option '3.4 and edit your dataset' or with pre-prepared data
+2. Submit [`JCL/COMPRUN.jcl`](JCL/COMPRUN.jcl) with pre-prepared data
 
-> **PROC reference:** `COMPRUN.jcl` uses the [`MYCOMP`](../../JCLPROC/MYCOMP.jcl) catalogued procedure for compilation and execution. Make sure `MYCOMP` is available in your system's `PROCLIB` before submitting.
+> **PROC reference:** `COMPRUN.jcl` uses the [`MYCOMPGO`](../../JCLPROC/MYCOMPGO.jcl) catalogued procedure for compilation and execution. Make sure `MYCOMPGO` is available in your system's `PROCLIB` before submitting.
 
 ---
 
