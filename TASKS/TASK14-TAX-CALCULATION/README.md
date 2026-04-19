@@ -29,8 +29,8 @@ The core technique is the **Table Lookup** pattern: instead of reading two files
 |---|---|---|---|
 | `EMP-ID` | `X(5)` | 1 | Employee ID |
 | `EMP-NAME` | `X(20)` | 6 | Employee name |
-| `EMP-REGION` | `X(3)` | 26 | Region code — matched against `TAX-TABLE` |
-| `EMP-GROSS` | `9(7)V99` | 29 | Gross salary — implied 2 decimal places |
+| `REGION-CODE` | `X(3)` | 26 | Region code — matched against `TAX-TABLE` |
+| `GROSS-SALARY` | `9(7)V99` | 29 | Gross salary — implied 2 decimal places |
 | FILLER | `X(42)` | 37 | Padding to 80 bytes |
 
 ### Output Record Layout — `PAYROLL.TXT` (`OUTDD`), LRECL=80, RECFM=F
@@ -56,8 +56,8 @@ OPEN TAX.RATES
 PERFORM UNTIL EOF
     READ TAX.RATES
     ADD 1 TO WS-TABLE-COUNT
-    MOVE TR-REGION-CODE TO WS-REGION(WS-TABLE-COUNT)
-    MOVE TR-TAX-RATE    TO WS-RATE(WS-TABLE-COUNT)
+    MOVE TR-REGION-CODE TO TAX-TABLE entry
+    MOVE TR-TAX-RATE    TO TAX-TABLE entry
 END-PERFORM
 CLOSE TAX.RATES
 ```
@@ -71,10 +71,10 @@ After this phase the entire rate table lives in `TAX-TABLE` in memory.
 OPEN EMP.SALARY, PAYROLL.TXT
 PERFORM UNTIL EOF
     READ EMP.SALARY
-    PERFORM LOOKUP-TAX-RATE
-    COMPUTE TAX-AMOUNT = EMP-GROSS * WS-FOUND-RATE
-    COMPUTE NET-PAY    = EMP-GROSS - TAX-AMOUNT
-    WRITE PAYROLL-REC
+    PERFORM LOOKUP-TAX-RATE using REGION-CODE against TAX-TABLE
+    If found   : COMPUTE TAX-AMOUNT = GROSS-SALARY * WS-RATE
+    If not found: COMPUTE TAX-AMOUNT = GROSS-SALARY * WS-DEFAULT-RATE (0.200)
+    WRITE to PAYROLL.TXT
 END-PERFORM
 CLOSE EMP.SALARY, PAYROLL.TXT
 ```
@@ -83,17 +83,17 @@ CLOSE EMP.SALARY, PAYROLL.TXT
 
 ## Table Lookup Logic
 
-The lookup searches `TAX-TABLE` from index 1 to `WS-TABLE-COUNT` comparing `EMP-REGION` against each `WS-REGION(i)`.
+The lookup searches `TAX-TABLE` from index 1 to `WS-TABLE-COUNT` comparing `REGION-CODE` against each entry.
 
 ### Using `PERFORM VARYING`
 
 ```cobol
 MOVE 'N' TO WS-FOUND-FLAG
-PERFORM VARYING WS-IDX FROM 1 BY 1
-        UNTIL WS-IDX > WS-TABLE-COUNT OR WS-FOUND-FLAG = 'Y'
-    IF WS-REGION(WS-IDX) = EMP-REGION
-        MOVE WS-RATE(WS-IDX) TO WS-FOUND-RATE
-        MOVE 'Y'             TO WS-FOUND-FLAG
+PERFORM VARYING WS-TABLE-COUNT FROM 1 BY 1
+        UNTIL WS-TABLE-COUNT > WS-TABLE-COUNT OR WS-FOUND-FLAG = 'Y'
+    IF TAX-TABLE region entry = REGION-CODE
+        MOVE WS-RATE     TO WS-FOUND-RATE
+        MOVE 'Y'         TO WS-FOUND-FLAG
     END-IF
 END-PERFORM
 ```
@@ -101,12 +101,11 @@ END-PERFORM
 ### Using `SEARCH` (alternative)
 
 ```cobol
-SET WS-IDX TO 1
-SEARCH WS-TAX-ENTRY
+SEARCH TAX-TABLE
     AT END
         MOVE WS-DEFAULT-RATE TO WS-FOUND-RATE
-    WHEN WS-REGION(WS-IDX) = EMP-REGION
-        MOVE WS-RATE(WS-IDX) TO WS-FOUND-RATE
+    WHEN region entry = REGION-CODE
+        MOVE WS-RATE TO WS-FOUND-RATE
 END-SEARCH
 ```
 
@@ -114,7 +113,7 @@ END-SEARCH
 
 ### Default Rate (Region Not Found)
 
-If no matching region code is found in `TAX-TABLE`, the program applies the default rate `WS-DEFAULT-RATE = 0.200` (20%).
+If no matching `REGION-CODE` is found in `TAX-TABLE`, the program applies `WS-DEFAULT-RATE = 0.200` (20%).
 The output record is written normally — no error is logged, but `OUT-REGION` in the output will show the unmatched code so it can be spotted during review.
 
 ---
@@ -122,7 +121,7 @@ The output record is written normally — no error is logged, but `OUT-REGION` i
 ## Tax Calculation
 
 ```
-TAX-AMOUNT = GROSS-SALARY × WS-FOUND-RATE
+TAX-AMOUNT = GROSS-SALARY × WS-RATE  (or WS-DEFAULT-RATE if not found)
 NET-PAY    = GROSS-SALARY − TAX-AMOUNT
 ```
 
@@ -170,14 +169,14 @@ DEFAULT RATE APPLIED:        2
 
 - **`OCCURS` + `INDEXED BY`** — defines `TAX-TABLE` as a fixed-size array of region/rate pairs loaded entirely into working-storage before any salary record is processed
 - **`SEARCH`** — sequential table scan that walks the `OCCURS` array from the current index position; stops at the first matching entry or falls through to `AT END` for the default rate
-- **Two-phase design** — the program has a strict initialization phase (load table, close file) before opening any processing file; this separation means `TAX.RATES` is read exactly once regardless of how many salary records exist
-- **Default rate fallback** — when no table entry matches `EMP-REGION` the program continues normally with a hardcoded rate instead of stopping or logging an error
+- **Two-phase design** — strict initialization phase (load `TAX-TABLE`, close `TAX.RATES`) before opening `EMP.SALARY`; `TAX.RATES` is read exactly once regardless of how many salary records exist
+- **`WS-DEFAULT-RATE` fallback** — when no entry in `TAX-TABLE` matches `REGION-CODE` the program applies `WS-DEFAULT-RATE` (0.200) and continues normally without stopping or logging an error
 
 ---
 
 ## Notes
 
 - Tax table loading does not check for duplicate region codes — if `TAX.RATES` contains duplicate entries for the same region, only the **first** occurrence will be matched during lookup; ensure the tax rates file has unique region codes per entry
-- The table size is bounded by the `OCCURS` limit defined in working-storage (`OCCURS 20 TIMES`) — if `TAX.RATES` has more than 20 records the program will ABEND on the 21st read; increase the `OCCURS` value if a larger table is needed
+- The table size is bounded by the `OCCURS` limit in working-storage (`OCCURS 20 TIMES`) — if `TAX.RATES` has more than 20 records the program will ABEND on the 21st read; increase the `OCCURS` value if a larger table is needed
 - `TAX.RATES` is closed after Phase 1 and never reopened — all lookups in Phase 2 are purely in-memory
 - Tested on IBM z/OS with Enterprise COBOL
