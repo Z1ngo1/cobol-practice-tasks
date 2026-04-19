@@ -6,6 +6,14 @@ Reads a commission tiers reference file (`COMM.TIERS`) into an in-memory array (
 The core technique is a **Tiered Table Lookup**: instead of a simple key match, the program finds the first tier where `WS-LIMIT >= SAL-AMT` — the salary bracket determines the commission rate. The tier table is loaded once into memory before any salary record is processed.
 
 ---
+## Critical Prerequisite: `COMM.TIERS` Must Be Sorted by `COMM-LIMIT` Ascending
+
+> **`COMM.TIERS` must be sorted by `COMM-LIMIT` in ascending order before this program runs.**
+
+The lookup algorithm selects the **first tier where `WS-LIMIT >= SAL-AMT`**. If the tiers are unsorted, a lower limit may match a salary that should fall into a higher tier — producing an incorrect commission rate **without any error message or ABEND**. Use a `SORT` step in the JCL before the program step if your input is not already sorted.
+
+---
+
 
 ## Files
 
