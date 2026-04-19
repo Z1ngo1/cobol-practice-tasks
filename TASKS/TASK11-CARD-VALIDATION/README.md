@@ -154,33 +154,6 @@ Input data and expected output are stored in the [`DATA/`](DATA/) folder:
 | [`DATA/APPROVED.FILE`](DATA/APPROVED.FILE) | Expected approved output — 2 records |
 | [`DATA/DECLINED.FILE`](DATA/DECLINED.FILE) | Expected declined output — 7 records with reason codes |
 
-### Card Master (VSAM) — run date: 2026/02/23 (YY=26, MM=02)
-
-| CARD-NUMBER | OWNER | EXP (MMYY) | STATUS | Note |
-|---|---|---|---|---|
-| `1111222233334444` | IVAN IVANOV | `1227` | `A` | Expires Dec 2027 — ✅ Valid |
-| `2222333344445555` | PETR PETROV | `0325` | `A` | Expires Mar 2025 — ❌ Expired (YY 25 < 26) |
-| `3333444455556666` | MARIA SIDOROVA | `1120` | `A` | Expires Nov 2020 — ❌ Expired (YY 20 < 26) |
-| `4444555566667777` | ANNA POPOVA | `0126` | `B` | Blocked |
-| `5555666677778888` | DMITRY KOZLOV | `0224` | `B` | Blocked |
-| `6666777788889999` | OLGA SMIRNOVA | `1225` | `A` | Expires Dec 2025 — ❌ Expired (YY 25 < 26) |
-| `7777888899990000` | SERGEY ORLOV | `0530` | `A` | Expires May 2030 — ✅ Valid |
-| `8888999900001111` | ELENA VOLKOVA | `1026` | `A` | Expires Oct 2026 — ✅ Valid |
-
-### Transactions Input (`TRNSDD`)
-
-| TRANS-ID | CARD-NUMBER | AMOUNT | Check 1 | Check 2 | Check 3 | Result |
-|---|---|---|---|---|---|---|
-| `00001` | `1111222233334444` | 100.00 | ✅ Found | ✅ Active | ✅ Exp 12/27 | **APPROVED** |
-| `00002` | `2222333344445555` | 500.00 | ✅ Found | ✅ Active | ❌ Exp 03/25 | DECLINED: EXPIRED |
-| `00003` | `3333444455556666` | 250.00 | ✅ Found | ✅ Active | ❌ Exp 11/20 | DECLINED: EXPIRED |
-| `00004` | `4444555566667777` | 1000.00 | ✅ Found | ❌ Blocked | — | DECLINED: BLOCKED |
-| `00005` | `5555666677778888` | 750.00 | ✅ Found | ❌ Blocked | — | DECLINED: BLOCKED |
-| `00006` | `9999888877776666` | 150.00 | ❌ Not found | — | — | DECLINED: NOT FOUND |
-| `00007` | `6666777788889999` | 300.00 | ✅ Found | ✅ Active | ❌ Exp 12/25 | DECLINED: EXPIRED |
-| `00008` | `8888999900001111` | 200.00 | ✅ Found | ✅ Active | ✅ Exp 10/26 | **APPROVED** |
-| `00009` | `1234567890123456` | 50.00 | ❌ Not found | — | — | DECLINED: NOT FOUND |
-
 ---
 
 ## Expected SYSOUT
@@ -202,34 +175,15 @@ DECLINED:               7
   EXPIRED:              3
 ========================================
 ```
-
-### Expected Approved Output (`APRVDD`)
-
-```
-00001 1111222233334444  $100.00
-00008 8888999900001111  $200.00
-```
-
-### Expected Declined Output (`DECLDD`)
-
-```
-00002 2222333344445555  $500.00 EXPIRED
-00003 3333444455556666  $250.00 EXPIRED
-00004 4444555566667777 $1000.00 BLOCKED
-00005 5555666677778888  $750.00 BLOCKED
-00006 9999888877776666  $150.00 NOT FOUND
-00007 6666777788889999  $300.00 EXPIRED
-00009 1234567890123456   $50.00 NOT FOUND
-```
-
 ---
 
 ## How to Run
 
-1. **Define and load the VSAM cluster** — use JCL in [`JCL/`](JCL/) to define `CARD.MASTER` and load test data from [`DATA/CARD.MASTER`](DATA/CARD.MASTER)
-2. **Compile and run** — submit [`JCL/COMPRUN.jcl`](JCL/COMPRUN.jcl)
+1. **Define VSAM cluster** — run [`JCL/DEFKSDS.jcl`](JCL/DEFKSDS.jcl)
+2. **Load initial master data** — load `CARD.MASTER` into the KSDS cluster either via REPRO (see [`DATAVSAM.jcl`](../../JCL%20SAMPLES/DATAVSAM.jcl)) or manually through **File Manager** in ISPF
+3. **Compile and run** — run [`JCL/COMPRUN.jcl`](JCL/COMPRUN.jcl)
 
-> **PROC reference:** `COMPRUN.jcl` uses the [`MYCOMP`](../../JCLPROC/MYCOMP.jcl) catalogued procedure for compilation and execution. Make sure `MYCOMP` is available in your system's `PROCLIB` before submitting.
+> **PROC reference:** `COMPRUN.jcl` uses the [`MYCOMPGO`](../../JCLPROC/MYCOMPGO.jcl) catalogued procedure for compilation and execution. Make sure `MYCOMPGO` is available in your system's `PROCLIB` before submitting.
 
 ---
 
