@@ -5,6 +5,33 @@ This task implements a COBOL-DB2 batch program that loads order records from a s
 
 ---
 
+## DB2 Tables
+
+### `TB_PRODUCTS` (Master Table)
+```sql
+CREATE TABLE TB_PRODUCTS (
+    PROD_ID     CHAR(5) NOT NULL,
+    PROD_NAME   VARCHAR(30),
+    UNIT_PRICE  DECIMAL(7, 2),
+    STOCK_QTY   INTEGER,
+    PRIMARY KEY (PROD_ID)
+) IN DATABASE Z73460;
+```
+
+### `TB_ORDERS` (Transaction Table)
+```sql
+CREATE TABLE TB_ORDERS (
+    ORDER_ID    CHAR(6) NOT NULL,
+    ORDER_DATE  DATE,
+    PROD_ID     CHAR(5),
+    QUANTITY    INTEGER,
+    PRIMARY KEY (ORDER_ID),
+    FOREIGN KEY (PROD_ID) REFERENCES TB_PRODUCTS(PROD_ID)
+) IN DATABASE Z73460;
+```
+
+---
+
 ## Business Logic
 The program processes a batch of orders with the following rules:
 1. **Field Validation**:
