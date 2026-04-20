@@ -2,7 +2,7 @@
 
 ## Overview
 
-Reads all records from a VSAM KSDS client master file (`CLIENT.MASTER`) sequentially using dynamic access mode. Inactive clients whose last activity date is before or equal to a cutoff date are deleted from the VSAM file and written to a PS archive file. A summary report is printed to SPOOL at the end of the job.
+Reads all records from a VSAM KSDS client master file [`CLIENT.MASTER`](DATA/CLIENT.MASTER.BEFORE) sequentially using dynamic access mode. Inactive clients whose last activity date is before or equal to a cutoff date are deleted from the VSAM file and written to a PS archive file. A summary report is printed to SPOOL at the end of the job.
 
 ---
 
@@ -10,9 +10,9 @@ Reads all records from a VSAM KSDS client master file (`CLIENT.MASTER`) sequenti
 
 | DD Name | File | Org | Mode | Description |
 |---|---|---|---|---|
-| `INDD` | `PARAM.FILE` | PS | INPUT | Cutoff date parameter (1 record) |
-| `CLTDD` | `CLIENT.MASTER` | KSDS | I-O | Client master file (read + delete) |
-| `OUTDD` | `ARCHIVE.OLD` | PS | OUTPUT | Archive file for deleted clients |
+| `INDD` | [`PARAM.FILE`](DATA/PARAM.FILE) | PS | INPUT | Cutoff date parameter (1 record) |
+| `CLTDD` | [`CLIENT.MASTER`](DATA/CLIENT.MASTER.BEFORE) | KSDS | I-O | Client master file (read + delete) |
+| `OUTDD` | [`ARCHIVE.OLD`](DATA/ARCHIVE.OLD) | PS | OUTPUT | Archive file for deleted clients |
 
 ### Cutoff Parameter Record Layout (`INDD`) — LRECL=80, RECFM=F
 
@@ -33,9 +33,10 @@ Reads all records from a VSAM KSDS client master file (`CLIENT.MASTER`) sequenti
 
 | Field | PIC | Position | Description |
 |---|---|---|---|
-| `ARC-ID` | `X(6)` | 1–6 | Client ID |
-| `ARC-NAME` | `X(20)` | 7–26 | Client name |
-| `ARC-LAST-DATE` | `9(8)` | 27–34 | Activity date |
+| `ARCH-ID` | `X(6)` | 1–6 | Client ID |
+| `ARCH-NAME` | `X(20)` | 7–26 | Client name |
+| `ARCH-DATE` | `9(8)` | 27–34 | Activity date |
+| FILLER | `X(46)` | 35–80 | Unused |
 
 ---
 
@@ -63,10 +64,10 @@ The program implements a conditional deletion logic where records are compared a
      - Move record to archive buffer.
      - **WRITE** to `ARCHIVE.OLD`.
      - **DELETE** record from `CLIENT.MASTER` (KSDS).
-     - Increment `WS-DELETE-COUNT`.
+     - Increment `REC-DELETE`.
    - If `CLIENT-LAST-DATE > WS-CUTOFF-DATE`:
      - Skip deletion.
-     - Increment `WS-KEEP-COUNT`.
+     - Increment `REC-KEPT`.
 6. Go to step 4 (Read Next).
 7. **DISPLAY SUMMARY** — print totals for records read, deleted, and kept.
 8. **CLOSE** all files → **STOP RUN**.
@@ -86,11 +87,33 @@ Input and expected output files are stored in the [`DATA/`](DATA/) folder:
 
 ---
 
+## Expected SYSOUT
+
+Actual job output is stored in [`SYSOUT.txt`](OUTPUT/SYSOUT.txt).
+
+```
+DATE IS: 20231231                       
+ARCH AND DELETE: 000100                 
+ARCH AND DELETE: 000105                 
+ARCH AND DELETE: 000110                 
+ARCH AND DELETE: 000130                 
+ARCH AND DELETE: 000135                 
+----------------------------------------
+STATISTIC REPORT:                       
+RECORDS READ:      10                   
+RECORDS DELETE:     5                   
+RECORDS KEPT:       5                   
+----------------------------------------
+```
+
+---
+
 ## How to Run
 
-1. **Define VSAM cluster** — run [`JCL/DEFKSDS.jcl`](JCL/DEFKSDS.jcl)
-2. **Load initial master data** — load [`DATA/CLIENT.MASTER.BEFORE`](DATA/CLIENT.MASTER.BEFORE) into the KSDS cluster
-3. **Compile and run** — run [`JCL/COMPRUN.jcl`](JCL/COMPRUN.jcl)
+1. **Define VSAM cluster** — run [`DEFKSDS.jcl`](JCL/DEFKSDS.jcl)
+2. **Load initial master data** — load [`CLIENT.MASTER.BEFORE`](DATA/CLIENT.MASTER.BEFORE) into the KSDS cluster
+3. **Compile and run** — run [`COMPRUN.jcl`](JCL/COMPRUN.jcl)
+4. **Compare output files and sysout** - see [`CLIENT.MASTER.AFTER`](DATA/CLIENT.MASTER.AFTER) AND [`SYSOUT.txt`](OUTPUT/SYSOUT.txt)
 
 ---
 
