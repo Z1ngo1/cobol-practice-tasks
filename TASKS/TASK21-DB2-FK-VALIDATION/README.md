@@ -2,15 +2,15 @@
 
 ## Overview
 
-Implements a COBOL-DB2 batch program that loads order records from a sequential input file into the [`TB_ORDERS`](SQL/CREATE.TB_ORDERS) table while enforcing field-level validation, reference checks against a product master table, duplicate detection, and controlled transaction commits.
+Implements a COBOL-DB2 batch program that loads order records from a sequential input file into the [`TB_ORDERS`](SQL/CREATE.TB_ORDERS.sql) table while enforcing field-level validation, reference checks against a product master table, duplicate detection, and controlled transaction commits.
 
-The core technique is **Foreign Key Validation with Pre-Insert Lookup**: before inserting an order row, the program verifies that the referenced product exists in [`TB_PRODUCTS`](SQL/CREATE.TB_PRODUCTS). Referential integrity is therefore enforced both by application logic and by the DB2 foreign key constraint.
+The core technique is **Foreign Key Validation with Pre-Insert Lookup**: before inserting an order row, the program verifies that the referenced product exists in [`TB_PRODUCTS`](SQL/CREATE.TB_PRODUCTS.sql). Referential integrity is therefore enforced both by application logic and by the DB2 foreign key constraint.
 
 ---
 
 ## DB2 Tables
 
-### [`TB_PRODUCTS`](SQL/CREATE.TB_PRODUCTS) (Master Table)
+### [`TB_PRODUCTS`](SQL/CREATE.TB_PRODUCTS.sql) (Master Table)
 
 ```sql
 CREATE TABLE TB_PRODUCTS (
@@ -29,7 +29,7 @@ CREATE TABLE TB_PRODUCTS (
 | `UNIT_PRICE` | `DECIMAL(7,2)` | Unit price used for order pricing |
 | `STOCK_QTY` | `INTEGER` | Current stock quantity in units |
 
-### [`TB_ORDERS`](SQL/CREATE.TB_ORDERS) (Transaction Table)
+### [`TB_ORDERS`](SQL/CREATE.TB_ORDERS.sql) (Transaction Table)
 
 ```sql
 CREATE TABLE TB_ORDERS (
