@@ -2,8 +2,7 @@
 
 ## Overview
 
-Reads a sequential transaction file (PS) and updates customer account balances in a VSAM KSDS master file.
-Invalid transactions (account not found, insufficient funds) are written to a separate error report file.
+Reads a sequential transaction file (PS) and updates customer account balances in a VSAM KSDS master file. Invalid transactions (account not found, insufficient funds) are written to a separate error report file.
 
 ---
 
@@ -36,14 +35,16 @@ Invalid transactions (account not found, insufficient funds) are written to a se
 
 | Field | PIC | Content |
 |---|---|---|
-| `REP-MSG-CONST` | `X(13)` | `TRANS ERROR: ` (constant) |
+| `REP-MSG-CONST` | `X(13)` | `TRANS ERROR:` (constant) |
 | `REP-ID` | `X(5)` | Account ID from failed transaction |
 | FILLER | `X(1)` | Space |
 | `REP-DESC` | `X(61)` | `ACCOUNT NOT FOUND` or `INSUFFICIENT FUNDS` |
 
 ---
 
-## Business Logic
+## Business Logic: Transaction Processing
+
+The program implements a sequential update pattern where each transaction is validated against the master file before applying updates or logging errors.
 
 | Transaction Type | Condition | Action |
 |---|---|---|
@@ -54,43 +55,45 @@ Invalid transactions (account not found, insufficient funds) are written to a se
 
 > Unknown transaction types (not `D` or `W`) are silently ignored — no update, no error logged.
 
+---
+
 ## Program Flow
 
-1. **OPEN** — transaction file (`INDD`) opened as INPUT, VSAM master (`EMPDD`) opened as I-O, error report (`REPDD`) opened as OUTPUT
-2. **READ** next transaction record from `INDD` — if EOF, go to step 7
+1. **OPEN** — transaction file (`INDD`) opened as INPUT, VSAM master (`EMPDD`) opened as I-O, error report (`REPDD`) opened as OUTPUT; check FILE STATUS for all.
+2. **READ** next transaction record from `INDD` — if EOF, go to step 7.
 3. **READ VSAM** master by key (`TRANS-ACCT-ID` → `ACCT-ID`):
-   - FILE STATUS `00` → record found, continue
-   - FILE STATUS `23` → record not found → write `ACCOUNT NOT FOUND` to error report → go to step 2
-   - Any other status → abnormal termination (`STOP RUN`)
+   - FILE STATUS `00` → record found, continue.
+   - FILE STATUS `23` → record not found → write `ACCOUNT NOT FOUND` to error report → go to step 2.
+   - Any other status → abnormal termination (`STOP RUN`).
 4. **Check transaction type:**
-   - `D` (Deposit) → `ACCT-BAL = ACCT-BAL + TRANS-AMOUNT` → go to step 5
+   - `D` (Deposit) → `ACCT-BAL = ACCT-BAL + TRANS-AMOUNT` → go to step 5.
    - `W` (Withdrawal) → check balance:
-     - `ACCT-BAL >= TRANS-AMOUNT` → `ACCT-BAL = ACCT-BAL - TRANS-AMOUNT` → go to step 5
-     - `ACCT-BAL < TRANS-AMOUNT` → write `INSUFFICIENT FUNDS` to error report → go to step 2
-   - Unknown type → skip silently → go to step 2
-5. **REWRITE** updated record back to VSAM master
-6. Go to step 2
-7. **CLOSE** all files → `STOP RUN`
+     - `ACCT-BAL >= TRANS-AMOUNT` → `ACCT-BAL = ACCT-BAL - TRANS-AMOUNT` → go to step 5.
+     - `ACCT-BAL < TRANS-AMOUNT` → write `INSUFFICIENT FUNDS` to error report → go to step 2.
+   - Unknown type → skip silently → go to step 2.
+5. **REWRITE** updated record back to VSAM master; check FILE STATUS.
+6. Go to step 2.
+7. **CLOSE** all files → **STOP RUN**.
 
 ---
 
 ## Test Data
 
-Input and expected output files are stored in the [`DATA/`](DATA/)) folder:
+Input and expected output files are stored in the [`DATA/`](DATA/) folder:
 
 | File | Description |
 |---|---|
-| [`TRANS.FILE.INPUT`](DATA/TRANS.FILE.INPUT) | Input transactions — format: `ACCT-ID(5) + TYPE(1) + AMOUNT(7)` |
-| [`ACCT.MASTER.BEFORE`](DATA/ACCT.MASTER.BEFORE) | Initial state of VSAM master — format: `ID(5) + NAME(20) + BAL(7)` |
-| [`ACCT.MASTER.AFTER`](DATA/ACCT.MASTER.AFTER) | Expected VSAM state after all transactions are applied |
-| [`ERROR.REPORT.OUTPUT`](DATA/ERROR.REPORT.OUTPUT) | Expected error report — rejected transactions with reason |
+| [`DATA/TRANS.FILE.INPUT`](DATA/TRANS.FILE.INPUT) | Input transactions — format: `ACCT-ID(5) + TYPE(1) + AMOUNT(7)` |
+| [`DATA/ACCT.MASTER.BEFORE`](DATA/ACCT.MASTER.BEFORE) | Initial state of VSAM master — format: `ID(5) + NAME(20) + BAL(7)` |
+| [`DATA/ACCT.MASTER.AFTER`](DATA/ACCT.MASTER.AFTER) | Expected VSAM state after all transactions are applied |
+| [`DATA/ERROR.REPORT.OUTPUT`](DATA/ERROR.REPORT.OUTPUT) | Expected error report — rejected transactions with reason |
 
 ---
 
 ## How to Run
 
 1. **Define VSAM cluster** — run [`JCL/DEFKSDS.jcl`](JCL/DEFKSDS.jcl)
-2. **Load initial master data** — load [`ACCT.MASTER.BEFORE`](DATA/ACCT.MASTER.BEFORE) into the KSDS cluster either via REPRO (see [`DATAVSAM.jcl`](../../JCL%20SAMPLES/DATAVSAM.jcl)) or manually through **File Manager** in ISPF 
+2. **Load initial master data** — load [`DATA/ACCT.MASTER.BEFORE`](DATA/ACCT.MASTER.BEFORE) into the KSDS cluster either via REPRO (see [`JCL SAMPLES/DATAVSAM.jcl`](../../JCL%20SAMPLES/DATAVSAM.jcl)) or manually through **File Manager** in ISPF
 3. **Compile and run** — run [`JCL/COMPRUN.jcl`](JCL/COMPRUN.jcl)
 
 > **PROC reference:** [`JCL/COMPRUN.jcl`](JCL/COMPRUN.jcl) uses the [`MYCOMPGO`](../../JCLPROC/MYCOMPGO.jcl) catalogued procedure for compilation and execution. Make sure [`MYCOMPGO`](../../JCLPROC/MYCOMPGO.jcl) is available in your system's `PROCLIB` before submitting.
