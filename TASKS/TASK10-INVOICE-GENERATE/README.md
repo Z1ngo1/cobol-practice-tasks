@@ -2,7 +2,7 @@
 
 ## Overview
 
-Reads a sequential PS orders file (`ORDERS.DAILY`), performs a **random read** into a VSAM KSDS product master (`PROD.MASTER`) for each order, enriches the record with product name and unit price, calculates `TOTAL-COST = QUANTITY × UNIT-PRICE`, and writes the result to a PS invoice output file (`INVOICE.FILE`).
+Reads a sequential PS orders file [`ORDERS.DAILY`](DATA/ORDERS.DAILY), performs a **random read** into a VSAM KSDS product master [`PROD.MASTER.VSAM`](DATA/PROD.MASTER.VSAM) for each order, enriches the record with product name and unit price, calculates `TOTAL-COST = QUANTITY × UNIT-PRICE`, and writes the result to a PS invoice output file [`INVOICE.FILE`](DATA/INVOICE.FILE).
 Orders with unknown product IDs are skipped and logged to SYSOUT. A summary is printed at the end.
 
 ---
