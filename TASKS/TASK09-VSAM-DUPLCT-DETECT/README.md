@@ -2,7 +2,7 @@
 
 ## Overview
 
-Reads a VSAM KSDS client master file (`CLIENT.MASTER`), sorts all records by name and birth date using the internal COBOL `SORT` verb, then groups consecutive records with the same `NAME + BIRTH-DATE` key.
+Reads a VSAM KSDS client master file [`CLIENT.MAST.VSAM`](DATA/CLIENT.MAST.VSAM), sorts all records by name and birth date using the internal COBOL `SORT` verb, then groups consecutive records with the same `NAME + BIRTH-DATE` key.
 Any group with more than one record is written to a PS duplicate report. A summary is printed to SYSOUT with the total number of records, duplicate groups, and suspicious records found.
 
 ---
