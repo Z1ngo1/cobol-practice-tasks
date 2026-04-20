@@ -11,9 +11,9 @@ Any group with more than one record is written to a PS duplicate report. A summa
 
 | DD Name | File | Org | Mode | Description |
 |---|---|---|---|---|
-| `VSAMDD` | `CLIENT.MASTER.FILE` | VSAM KSDS | INPUT | Source client master file, key = `CLIENT-ID` |
+| `VSAMDD` | [`CLIENT.MASTER.FILE`](DATA/CLIENT.MAST.VSAM) | VSAM KSDS | INPUT | Source client master file, key = `CLIENT-ID` |
 | `SRTDD` | Sort work file | SD | WORK | Internal sort work area |
-| `REPDD` | `DUPLICATE.REPORT` | PS | OUTPUT | Duplicate records report, LRECL=80, RECFM=F |
+| `REPDD` | [`DUPLICATE.REPORT`](DATA/DUPLCT.REPORT) | PS | OUTPUT | Duplicate records report, LRECL=80, RECFM=F |
 
 ### VSAM Record Layout (`VSAMDD`) — LRECL=74
 
@@ -106,25 +106,26 @@ Input data and expected output are stored in the [`DATA/`](DATA/) folder:
 
 ## Expected SYSOUT
 
-Actual job output is stored in [`OUTPUT/SYSOUT.txt`](OUTPUT/SYSOUT.txt).
+Actual job output is stored in [`SYSOUT.txt`](OUTPUT/SYSOUT.txt).
 
 ```
 ========================================
 DUPLICATE REPORT SUMMARY
 ========================================
 TOTAL RECORDS PROCESSED:     10
-GROUPS WITH DUPLICATES:        3
-SUSPICIOUS RECORDS FOUND:      8
+GROUPS WITH DUPLICATES:       3
+SUSPICIOUS RECORDS FOUND:     8
 ========================================
 ```
 
 ## How to Run
 
-1. **Define VSAM cluster** — run [`JCL/DEFKSDS.jcl`](JCL/DEFKSDS.jcl)
-2. **Load initial master data** — load [`DATA/CLIENT.MAST.VSAM`](DATA/CLIENT.MAST.VSAM) into the KSDS cluster either via REPRO (see [`DATAVSAM.jcl`](../../JCL%20SAMPLES/DATAVSAM.jcl)) or manually through **File Manager** in ISPF 
-3. **Compile and run** — run [`JCL/COMPRUN.jcl`](JCL/COMPRUN.jcl)
+1. **Define VSAM cluster** — run [`DEFKSDS.jcl`](JCL/DEFKSDS.jcl)
+2. **Load initial master data** — load [`CLIENT.MAST.VSAM`](DATA/CLIENT.MAST.VSAM) into the KSDS cluster either via REPRO (see [`DATAVSAM.jcl`](../../JCL%20SAMPLES/DATAVSAM.jcl)) or manually through **File Manager** in ISPF 
+3. **Compile and run** — run [`COMPRUN.jcl`](JCL/COMPRUN.jcl)
+4. **Compare output files and sysout** - see [`DUPLCT.REPORT`](DATA/DUPLCT.REPORT) and [`SYSOUT.txt`](OUTPUT/SYSOUT.txt)
 
-> **PROC reference:** [`JCL/COMPRUN.jcl`](JCL/COMPRUN.jcl) uses the [`MYCOMPGO`](../../JCLPROC/MYCOMPGO.jcl) catalogued procedure for compilation and execution. Make sure [`MYCOMPGO`](../../JCLPROC/MYCOMPGO.jcl) is available in your system's `PROCLIB` before submitting.
+> **PROC reference:** [`COMPRUN.jcl`](JCL/COMPRUN.jcl) uses the [`MYCOMPGO`](../../JCLPROC/MYCOMPGO.jcl) catalogued procedure for compilation and execution. Make sure [`MYCOMPGO`](../../JCLPROC/MYCOMPGO.jcl) is available in your system's `PROCLIB` before submitting.
 
 ---
 
