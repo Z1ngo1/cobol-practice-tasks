@@ -180,7 +180,7 @@ PARTS NOT FOUND:       6
 1. Upload [`DATA/PARTS.CATALOG`](DATA/PARTS.CATALOG) and [`DATA/ORDERS.FILE`](DATA/ORDERS.FILE) to your mainframe datasets manually through option '3.4 and edit your dataset' or with pre-prepared data
 2. Submit [`JCL/COMPRUN.jcl`](JCL/COMPRUN.jcl) with pre-prepared data
 
-> **PROC reference:** `COMPRUN.jcl` uses the [`MYCOMPGO`](../../JCLPROC/MYCOMPGO.jcl) catalogued procedure for compilation and execution. Make sure `MYCOMPGO` is available in your system's `PROCLIB` before submitting.
+> **PROC reference:** [`JCL/COMPRUN.jcl`](JCL/COMPRUN.jcl) uses the [`MYCOMPGO`](../../JCLPROC/MYCOMPGO.jcl) catalogued procedure for compilation and execution. Make sure [`MYCOMPGO`](../../JCLPROC/MYCOMPGO.jcl) is available in your system's `PROCLIB` before submitting.
 
 ---
 
