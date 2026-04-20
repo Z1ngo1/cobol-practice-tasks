@@ -182,6 +182,7 @@ DECLINED:               7
 1. **Define VSAM cluster** — run [`DEFKSDS.jcl`](JCL/DEFKSDS.jcl)
 2. **Load initial master data** — load [`CARD.MASTER`](DATA/CARD.MASTER) into the KSDS cluster either via REPRO (see [`DATAVSAM.jcl`](../../JCL%20SAMPLES/DATAVSAM.jcl)) or manually through **File Manager** in ISPF
 3. **Compile and run** — run [`COMPRUN.jcl`](JCL/COMPRUN.jcl)
+4. **Compare output files and sysout** - see [`APPROVED.FILE`](DATA/APPROVED.FILE), [`DECLINED.FILE`](DATA/DECLINED.FILE)  and [`SYSOUT.txt`](OUTPUT/SYSOUT.txt)
 
 > **PROC reference:** [`COMPRUN.jcl`](JCL/COMPRUN.jcl) uses the [`MYCOMPGO`](../../JCLPROC/MYCOMPGO.jcl) catalogued procedure for compilation and execution. Make sure [`MYCOMPGO`](../../JCLPROC/MYCOMPGO.jcl) is available in your system's `PROCLIB` before submitting.
 
