@@ -2,7 +2,7 @@
 
 ## Overview
 
-Reads a small tax-rate reference file (`TAX.RATES`) into an in-memory array (`TAX-TABLE`), then processes an employee salary file (`EMP.SALARY`) and writes a payroll output (`PAYROLL.TXT`) with the calculated tax amount for each employee.
+Reads a small tax-rate reference file [`TAX.RATES`](./DATA/TAX.RATES) into an in-memory array (`TAX-TABLE`), then processes an employee salary file [`EMP.SALARY`](./DATA/EMP.SALARY) and writes a payroll output [`PAYROLL.TXT`](./DATA/PAYROLL.TXT) with the calculated tax amount for each employee.
 The core technique is the **Table Lookup** pattern: instead of reading two files simultaneously, the reference data is loaded into memory once and searched on every salary record — much simpler than a match-merge and appropriate when the lookup table is small (10–50 entries).
 
 ---
@@ -108,9 +108,9 @@ All input and expected output files are in the [`DATA/`](./DATA) folder.
 
 | File | Description |
 |---|---|
-| [`DATA/TAX.RATES`](./DATA/TAX.RATES) | 7 region tax rate entries |
-| [`DATA/EMP.SALARY`](./DATA/EMP.SALARY) | 10 employee salary records |
-| [`DATA/PAYROLL.TXT`](./DATA/PAYROLL.TXT) | Expected payroll output with tax amounts |
+| [`TAX.RATES`](./DATA/TAX.RATES) | 7 region tax rate entries |
+| [`EMP.SALARY`](./DATA/EMP.SALARY) | 10 employee salary records |
+| [`PAYROLL.TXT`](./DATA/PAYROLL.TXT) | Expected payroll output with tax amounts |
 
 ---
 
