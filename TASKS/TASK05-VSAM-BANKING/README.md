@@ -10,9 +10,9 @@ Reads a sequential transaction file (PS) and updates customer account balances i
 
 | DD Name | File | Org | Mode | Description |
 |---|---|---|---|---|
-| `INDD` | `TRANS.FILE` | PS | INPUT | Transaction input records |
-| `EMPDD` | `ACCT.MASTER` | KSDS | I-O | Account master file (read + rewrite) |
-| `REPDD` | `REPORT.FILE` | PS | OUTPUT | Error report output |
+| `INDD` | [`TRANS.FILE`](DATA/TRANS.FILE.INPUT) | PS | INPUT | Transaction input records |
+| `EMPDD` | [`ACCT.MASTER`](DATA/ACCT.MASTER.BEFORE) | KSDS | I-O | Account master file (read + rewrite) |
+| `REPDD` | [`REPORT.FILE`](DATA/ERROR.REPORT.OUTPUT) | PS | OUTPUT | Error report output |
 
 ### Transaction Record Layout (`INDD`) — LRECL=80, RECFM=FB
 
@@ -92,11 +92,11 @@ Input and expected output files are stored in the [`DATA/`](DATA/) folder:
 
 ## How to Run
 
-1. **Define VSAM cluster** — run [`JCL/DEFKSDS.jcl`](JCL/DEFKSDS.jcl)
-2. **Load initial master data** — load [`DATA/ACCT.MASTER.BEFORE`](DATA/ACCT.MASTER.BEFORE) into the KSDS cluster either via REPRO (see [`JCL SAMPLES/DATAVSAM.jcl`](../../JCL%20SAMPLES/DATAVSAM.jcl)) or manually through **File Manager** in ISPF
-3. **Compile and run** — run [`JCL/COMPRUN.jcl`](JCL/COMPRUN.jcl)
+1. **Define VSAM cluster** — run [`DEFKSDS.jcl`](JCL/DEFKSDS.jcl)
+2. **Load initial master data** — load [`ACCT.MASTER.BEFORE`](DATA/ACCT.MASTER.BEFORE) into the KSDS cluster either via REPRO (see [`DATAVSAM.jcl`](../../JCL%20SAMPLES/DATAVSAM.jcl)) or manually through **File Manager** in ISPF
+3. **Compile and run** — run [`COMPRUN.jcl`](JCL/COMPRUN.jcl)
 
-> **PROC reference:** [`JCL/COMPRUN.jcl`](JCL/COMPRUN.jcl) uses the [`MYCOMPGO`](../../JCLPROC/MYCOMPGO.jcl) catalogued procedure for compilation and execution. Make sure [`MYCOMPGO`](../../JCLPROC/MYCOMPGO.jcl) is available in your system's `PROCLIB` before submitting.
+> **PROC reference:** [`COMPRUN.jcl`](JCL/COMPRUN.jcl) uses the [`MYCOMPGO`](../../JCLPROC/MYCOMPGO.jcl) catalogued procedure for compilation and execution. Make sure [`MYCOMPGO`](../../JCLPROC/MYCOMPGO.jcl) is available in your system's `PROCLIB` before submitting.
 
 ---
 
