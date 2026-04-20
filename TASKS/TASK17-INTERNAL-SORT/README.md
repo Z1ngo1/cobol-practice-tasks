@@ -194,7 +194,7 @@ RECORDS WRITTEN:      15
 1. Upload [`DATA/EXAM.RAW`](DATA/EXAM.RAW) to your mainframe dataset manually through option '3.4 and edit your dataset' or with pre-prepared data
 2. Submit [`JCL/COMPRUN.jcl`](JCL/COMPRUN.jcl) with pre-prepared data
 
-> **PROC reference:** `COMPRUN.jcl` uses the [`MYCOMPGO`](../../JCLPROC/MYCOMPGO.jcl) catalogued procedure for compilation and execution. Make sure `MYCOMPGO` is available in your system's `PROCLIB` before submitting.
+> **PROC reference:** [`JCL/COMPRUN.jcl`](JCL/COMPRUN.jcl) uses the [`MYCOMPGO`](../../JCLPROC/MYCOMPGO.jcl) catalogued procedure for compilation and execution. Make sure [`MYCOMPGO`](../../JCLPROC/MYCOMPGO.jcl) is available in your system's `PROCLIB` before submitting.
 
 > **Note:** `WORK.SORT` (`SRTDD`) is defined as `DISP=(NEW,DELETE,DELETE)` in the JCL — it is a temporary dataset that is automatically deleted after the job completes regardless of return code.
 
