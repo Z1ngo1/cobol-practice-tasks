@@ -14,12 +14,12 @@ The core technique is **Conditional DB2 Upsert (SELECT → UPDATE/INSERT)**: the
 
 ```sql
 CREATE TABLE TB_EMPLOYEES (
-  EMP_ID      CHAR(5)        NOT NULL PRIMARY KEY,
-  EMP_NAME    VARCHAR(20)    NOT NULL,
-  DEPT        CHAR(3),
-  SALARY      DECIMAL(7,2),
-  HIRE_DATE   DATE,
-  STATUS      CHAR(1)        CHECK (STATUS IN ('A', 'I'))
+  EMP_ID    CHAR(5)       NOT NULL PRIMARY KEY,
+  EMP_NAME  VARCHAR(20)   NOT NULL,
+  DEPT      CHAR(3),
+  SALARY    DECIMAL(7,2),
+  HIRE_DATE DATE,
+  STATUS    CHAR(1)       CHECK (STATUS IN ('A', 'I'))
 ) IN DATABASE Z73460;
 ```
 
@@ -56,12 +56,12 @@ CREATE TABLE TB_EMPLOYEES (
 
 | Field | Picture | Description |
 |---|---|---|
-| `LOG-REC` | `X(80)` | One log line: `<EMP_ID> <STATUS_MESSAGE>` |
+| `LOG-REC` | `X(80)` | One log line: `<EMP-ID> <EMP-NAME> <STATUS-MESSAGE>` |
 
 Status messages:
 - `INSERTED (NEW EMPLOYEE)` — successful INSERT
 - `UPDATE (SALARY CHANGE FROM <old> TO <new>)` — successful UPDATE with change
-- `UPDATED (NO SALARY CHANGE: <old>)` — successful UPDATE without salary change
+- `UPDATED (NO SALARY CHANGE: <salary>)` — successful UPDATE without salary change
 - `ID VALIDATION ERROR: ID IS EMPTY`
 - `VALIDATION ERROR: NAME IS EMPTY`
 - `SALARY VALIDATION ERROR: <reason>` (NON-NUMERIC / NEGATIVE / ZERO)
@@ -69,7 +69,9 @@ Status messages:
 
 ---
 
-## Three-Phase Processing
+## Business Logic: Three-Phase Processing
+
+The program implements a three-phase pipeline: validate each incoming record, determine whether to insert or update via a DB2 existence check, then manage transaction commits in controlled batches.
 
 The program is driven by `MAIN-LOGIC`:
 
@@ -98,11 +100,11 @@ VALIDATE-STATUS: Check IS 'A' OR 'I'
 If validation passes, the program queries DB2 to see if the record exists:
 
 ```sql
-EXEC SQL 
-  SELECT EMP_NAME, SALARY 
-  INTO :HV-OLD-NAME, :HV-OLD-SALARY 
-  FROM TB_EMPLOYEES 
-  WHERE EMP_ID = :HV-EMP-ID 
+EXEC SQL
+    SELECT EMP_NAME, SALARY
+    INTO :HV-OLD-NAME, :HV-OLD-SALARY
+    FROM TB_EMPLOYEES
+    WHERE EMP_ID = :HV-EMP-ID
 END-EXEC.
 ```
 
@@ -118,9 +120,31 @@ END-EXEC.
 ### Phase 3 — Commit Strategy
 
 The program uses a batch commit approach to optimize performance:
+
 - **Batch size**: 50 operations (`COMMIT-COUNTER >= 50`)
 - **Final commit**: Executed in `CLOSE-ALL-FILES` for any remaining records
 - **Rollback**: Critical errors (SQLCODE < -900) trigger immediate `ROLLBACK` and `STOP RUN`
+
+---
+
+## Program Flow
+
+1. `OPEN-ALL-FILES` — open `EMP-FILE` (INPUT) and `SYNC-LOG` (OUTPUT); check FILE STATUS for both
+2. `READ` first record from `EMP-FILE`
+3. `PROCESS-ALL-RECORDS` — main loop until `AT END`:
+   - 3.1. `VALIDATE-ID` — skip record with error log if EMP-ID is blank
+   - 3.2. `VALIDATE-NAME` — skip record with error log if EMP-NAME is blank
+   - 3.3. `VALIDATE-SALARY` — skip if non-numeric, negative, or zero
+   - 3.4. `VALIDATE-STATUS` — skip if not 'A' or 'I'
+   - 3.5. `EXEC SQL SELECT` — check existence in `TB_EMPLOYEES`
+   - 3.6. SQLCODE 0 → `UPDATE-EMPLOYEE` + log salary change or no-change message
+   - 3.7. SQLCODE 100 → `INSERT-EMPLOYEE` + log `INSERTED (NEW EMPLOYEE)`
+   - 3.8. Negative SQLCODE < -900 → `ROLLBACK` + `STOP RUN`
+   - 3.9. Increment `COMMIT-COUNTER`; if `>= 50` → `EXEC SQL COMMIT`, reset counter
+   - 3.10. `READ` next record
+4. `CLOSE-ALL-FILES` — `EXEC SQL COMMIT` for remaining records; close both files
+5. `DISPLAY-SUMMARY` — print records processed, inserted, updated, errors, commit batches
+6. `STOP RUN`
 
 ---
 
@@ -151,12 +175,13 @@ Actual job output is stored in [`OUTPUT/SYSOUT.txt`](OUTPUT/SYSOUT.txt).
 
 ```
 ========================================
-EMPLOYEE UPSERT SUMMARY
+       EMPLOYEE UPSERT SUMMARY
 ========================================
-RECORDS PROCESSED:    24
-Create README for Task 20 - DB2 Upsert Employee Synchronization with Change LoggingRECORDS UPDATED:       3
-RECORDS ERRORS:        6
-COMMIT BATCHES:        1
+RECORDS PROCESSED:  24
+RECORDS INSERTED:   15
+RECORDS UPDATED:    3
+RECORDS ERRORS:     6
+COMMIT BATCHES:     1
 ========================================
 ```
 
