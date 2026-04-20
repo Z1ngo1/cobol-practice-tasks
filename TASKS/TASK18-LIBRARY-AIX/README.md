@@ -231,6 +231,8 @@ BOOKS FOUND (TOTAL):   14
 6. [`BLDINDX.jcl`](JCL/BLDINDX.jcl) — Build the AIX (STEP025)
 7. [`COMPRUN.jcl`](JCL/COMPRUN.jcl) — Compile and run VSAM18 program (STEP030-STEP050)
 
+Final step. Compare output files and sysout - see [`RESULT.RPT`](DATA/RESULT.RPT) and [`SYSOUT.txt`](OUTPUT/SYSOUT.txt)
+
 ---
 
 ## Key COBOL Concepts Used
