@@ -184,24 +184,6 @@ READ-MATCHING-BOOKS:
 
 ---
 
-## Search Request Data (inline in STEP035)
-
-7 author names loaded into `SEARCH.REQ`:
-
-```
-KING STEPHEN
-ROWLING J.K.
-PUSHKIN A.S.
-ASIMOV ISAAC
-TOLKIEN J.R.R.
-HEMINGWAY ERNEST
-CHRISTIE AGATHA
-```
-
-`PUSHKIN A.S.` and `HEMINGWAY ERNEST` are not in the catalog — they produce NOT FOUND lines.
-
----
-
 ## Test Data
 
 All input and expected output files are in the [`DATA/`](DATA/) folder.
