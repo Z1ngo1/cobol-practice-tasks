@@ -1,72 +1,159 @@
-# Task 23: VSAM KSDS Credit Approval System
+# Task 23 — VSAM KSDS Credit Approval System
 
 ## Overview
-This task implements a Credit Approval System that demonstrates interaction between sequential files, VSAM KSDS datasets, and inter-program communication via subprogram calls.
 
-The system processes loan requests by looking up customer data in a VSAM master file and then evaluating creditworthiness using a specialized subprogram.
+Implements a two-program COBOL batch system that evaluates loan requests by performing random-access lookups against a VSAM KSDS customer master file and delegating credit scoring rules to a subprogram. Approved and rejected decisions are written to a sequential approval log.
 
-1. **Main Program (`JOBSUB23`)**: Coordinates the processing flow. It reads loan requests, performs random reads on the VSAM KSDS, calls the credit subprogram, and logs decisions.
-2. **Credit Subprogram (`SUB1JB23`)**: Contains the business logic for credit eligibility based on score, late payments, and debt-to-loan ratio.
+The two programs work together:
+- **`JOBSUB23`** (Main) — reads `LOAN.REQUESTS`, performs a VSAM random read on `CREDIT.MASTER` for each request, calls `SUB1JB23`, and writes the decision to `APPROVAL.LOG`.
+- **`SUB1JB23`** (Credit Checker) — receives credit score, late payments, current debt, and loan amount; returns APPROVED or REJECTED with a reason code.
+
+---
 
 ## Files
-- `COBOL/JOBSUB23.cbl`: Main driver program (VSAM lookup & I/O).
-- `COBOL/SUB1JB23.cbl`: Subprogram - Credit eligibility checker.
-- `JCL/DEFKSDS.jcl`: IDCAMS job to define the VSAM KSDS cluster.
-- `JCL/COMPRUN.jcl`: Job to create input data, compile components, and execute the system.
-- `DATA/LOAN.REQUESTS`: Sequential input file with loan applications.
-- `OUTPUT/APPROVAL.LOG`: Generated report with approval/rejection decisions.
 
-## Record Layouts
+| DD Name | File | Org | Mode | Description |
+|---|---|---|---|---|
+| `LOANDD` | `LOAN.REQUESTS` | PS | INPUT | Sequential loan request file, RECFM=F, LRECL=80 |
+| `MASTERDD` | `CREDIT.MASTER` | KSDS | I-O | VSAM indexed customer master, Key pos 1–6 |
+| `LOGDD` | `APPROVAL.LOG` | PS | OUTPUT | Sequential approval/rejection log |
 
-### VSAM Customer Master (`CREDIT.MASTER`) — LRECL=80, Key=1-6
+### Input Record Layout — `LOAN.REQUESTS` (`LOANDD`), LRECL=80, RECFM=F
+
 | Field | Position | Format | Description |
-| :--- | :--- | :--- | :--- |
-| `CUST-ID` | 1-6 | X(6) | Customer Identifier (KSDS Key) |
-| `CREDIT-SCORE` | 7-9 | 9(3) | FICO-like credit score |
-| `LATE-PAYMENTS`| 10-11 | 9(2) | Number of late payments |
-| `CURRENT-DEBT` | 12-19 | 9(6)V99 | Total current debt |
-| `FILLER` | 20-80 | X(61) | Reserved |
+|---|---|---|---|
+| `CUST-ID` | 1–6 | `X(6)` | Customer identifier (used as KSDS lookup key) |
+| `LOAN-AMT` | 7–14 | `9(6)V99` | Requested loan amount |
+| `FILLER` | 15–80 | `X(66)` | Reserved |
 
-### Input Loan Request (`LOAN.REQUESTS`) — LRECL=80
+### VSAM Record Layout — `CREDIT.MASTER` (`MASTERDD`), LRECL=80, Key=1–6
+
 | Field | Position | Format | Description |
-| :--- | :--- | :--- | :--- |
-| `CUST-ID` | 1-6 | X(6) | Customer Identifier |
-| `LOAN-AMT` | 7-14 | 9(6)V99 | Requested Loan Amount |
-| `FILLER` | 15-80 | X(66) | Reserved |
+|---|---|---|---|
+| `CUST-ID` | 1–6 | `X(6)` | **KSDS primary key** — Customer ID |
+| `CREDIT-SCORE` | 7–9 | `9(3)` | FICO-like credit score (0–999) |
+| `LATE-PAYMENTS` | 10–11 | `9(2)` | Number of late payment occurrences |
+| `CURRENT-DEBT` | 12–19 | `9(6)V99` | Total current outstanding debt |
+| `FILLER` | 20–80 | `X(61)` | Reserved |
 
-## Processing Logic
+### Output Record Layout — `APPROVAL.LOG` (`LOGDD`)
 
-### 1. VSAM Lookup
-The main program uses the `CUST-ID` from the loan request to perform a random read (`READ ... KEY IS ...`) on the VSAM KSDS.
-- If `FILE STATUS` is `23` (Key not found), the request is automatically rejected.
-- If other errors occur, the program terminates.
+| Field | Picture | Description |
+|---|---|---|
+| `LOG-LINE` | `X(80)` | One line per request: `<CUST-ID> <DECISION> <REASON>` |
 
-### 2. Credit Evaluation (`SUB1JB23`)
-The subprogram receives customer data and loan details. It applies the following rules in order:
-- **Rule 1**: Credit Score < 600 -> REJECTED (Reason: Poor Credit Score).
-- **Rule 2**: Late Payments >= 3 -> REJECTED (Reason: Too Many Late Payments).
-- **Rule 3**: (Current Debt + Loan Amount) > (Credit Score * 200) -> REJECTED (Reason: Debt Exceeds Limit).
-- **Rule 4**: If all checks pass -> APPROVED.
+Decision messages:
+- `APPROVED CLIENT QUALIFIES`
+- `REJECTED POOR CREDIT SCORE`
+- `REJECTED TOO MANY LATE PAYMENTS`
+- `REJECTED DEBT EXCEEDS LIMIT`
+- `REJECTED CUSTOMER NOT FOUND`
 
-## JCL Steps
-- **`STEP005`**: Deletes previous output and temporary datasets.
-- **`STEP010`**: Uses `IEBGENER` to populate the `LOAN.REQUESTS` file with sample data.
-- **`STEP013`**: Compiles the credit subprogram (`SUB1JB23`).
-- **`STEP015`**: Compiles the main program (`JOBSUB23`), links it with the subprogram, and executes the module.
+---
 
-## Key COBOL Concepts Used
-- **VSAM KSDS Management**: Random access using `SELECT ... ASSIGN TO ... ORGANIZATION IS INDEXED`.
-- **Subprogram Communication**: Using `CALL ... USING` to pass credit parameters and receive decisions.
-- **Error Handling**: Checking `FILE STATUS` for VSAM operations.
-- **Structured Reports**: Using `STRING` and `FUNCTION TRIM` for formatted output logs.
+## Business Logic
+
+### Phase 1 — VSAM Lookup
+
+For each loan request, the main program performs a random read on `CREDIT.MASTER` using `CUST-ID` as the key:
+- **FILE STATUS `00`** — record found; pass data to `SUB1JB23`.
+- **FILE STATUS `23`** — key not found; log `REJECTED CUSTOMER NOT FOUND` and skip.
+- **Any other FILE STATUS** — log error and terminate the program.
+
+### Phase 2 — Credit Evaluation (`SUB1JB23`)
+
+The subprogram applies four rules **in order**. The first failing rule determines the rejection reason:
+
+| Rule | Condition | Decision |
+|---|---|---|
+| 1 | `CREDIT-SCORE < 600` | `REJECTED POOR CREDIT SCORE` |
+| 2 | `LATE-PAYMENTS >= 3` | `REJECTED TOO MANY LATE PAYMENTS` |
+| 3 | `CURRENT-DEBT + LOAN-AMT > CREDIT-SCORE × 200` | `REJECTED DEBT EXCEEDS LIMIT` |
+| 4 | All checks pass | `APPROVED CLIENT QUALIFIES` |
+
+---
+
+## Program Flow
+
+1. `OPEN-FILES` — open `LOAN-FILE` (INPUT), `CREDIT-MASTER` (I-O), `APPROVAL-LOG` (OUTPUT); check FILE STATUS for all.
+2. `READ` first record from `LOAN-FILE`.
+3. `PROCESS-ALL-RECORDS` — main loop until `AT END`:
+   - 3.1. `READ CREDIT-MASTER KEY IS CUST-ID` — random VSAM lookup.
+   - 3.2. FILE STATUS `23` — log `REJECTED CUSTOMER NOT FOUND`, increment error counter, skip to next record.
+   - 3.3. Other non-zero FILE STATUS — log fatal error and `STOP RUN`.
+   - 3.4. `CALL 'SUB1JB23' USING CREDIT-SCORE, LATE-PAYMENTS, CURRENT-DEBT, LOAN-AMT, WS-DECISION, WS-REASON`.
+   - 3.5. Format and `WRITE` output line to `APPROVAL-LOG`.
+   - 3.6. Increment appropriate counter (approved / rejected).
+   - 3.7. `READ` next record from `LOAN-FILE`.
+4. `CLOSE-FILES` — close all three files.
+5. `DISPLAY-SUMMARY` — print records processed, approved, rejected to SYSOUT.
+6. `STOP RUN`.
+
+---
+
+## Test Data
+
+All input, master, and output files are in the [`DATA/`](DATA/) folder.
+
+| File | Description |
+|---|---|
+| [`DATA/LOAN.REQUESTS`](DATA/LOAN.REQUESTS) | 7 loan request records (input) |
+| [`DATA/CREDIT.MASTER`](DATA/CREDIT.MASTER) | VSAM customer master image (5 customers loaded) |
+| [`DATA/APPROVAL.LOG`](DATA/APPROVAL.LOG) | Approval/rejection log after program execution |
+
+---
+
+## Expected SYSOUT
+
+Actual job output is stored in [`OUTPUT/SYSOUT.txt`](OUTPUT/SYSOUT.txt).
+
+```
+RECORDS PROCESSED: 7
+RECORDS APPROVED:  2
+RECORDS REJECTED:  5
+```
+
+Expected content of `APPROVAL.LOG`:
+
+```
+100001 APPROVED CLIENT QUALIFIES
+100002 REJECTED TOO MANY LATE PAYMENTS
+100003 REJECTED CUSTOMER NOT FOUND
+100004 REJECTED CUSTOMER NOT FOUND
+100005 REJECTED POOR CREDIT SCORE
+100006 APPROVED CLIENT QUALIFIES
+100007 REJECTED TOO MANY LATE PAYMENTS
+```
+
+---
 
 ## How to Run
-1. Run `JCL/DEFKSDS.jcl` to define the VSAM KSDS cluster.
-2. Load the VSAM file with initial customer data (using REPRO or a separate load program).
-3. Submit `JCL/COMPRUN.jcl` to process the loan requests.
+
+1. **Define the VSAM cluster** — submit [`JCL/DEFKSDS.jcl`](JCL/DEFKSDS.jcl) to create the `CREDIT.MASTER` KSDS cluster via IDCAMS.
+2. **Load customer data** — use IDCAMS REPRO or a separate load step to populate `CREDIT.MASTER` with initial records.
+3. **Compile and run** — submit [`JCL/COMPRUN.jcl`](JCL/COMPRUN.jcl). The job will:
+   - Delete previous datasets (`STEP005`).
+   - Populate `LOAN.REQUESTS` via `IEBGENER` (`STEP010`).
+   - Compile the credit subprogram `SUB1JB23` (`STEP013`).
+   - Compile and link `JOBSUB23` with `SUB1JB23`, then execute (`STEP015`).
 4. Check `Z73460.TASK23.APPROVAL.LOG` for results.
 
+---
+
+## Key COBOL Concepts Used
+
+- **VSAM KSDS Random Access** — `SELECT ... ORGANIZATION IS INDEXED ACCESS MODE IS RANDOM` with `READ ... KEY IS` for direct lookup by customer ID.
+- **FILE STATUS Checking** — `23` for key-not-found, other codes for fatal errors; all VSAM operations are guarded.
+- **`CALL ... USING`** — passes credit parameters by reference to the subprogram and receives back the decision and reason.
+- **`LINKAGE SECTION`** — defines the parameter interface inside `SUB1JB23`.
+- **Rule-Based Evaluation** — sequential rule checks in the subprogram ensure the first failing condition terminates evaluation early.
+- **`STRING` with `FUNCTION TRIM`** — builds formatted log lines from customer ID, decision, and reason fields.
+
+---
+
 ## Notes
-- Ensure the VSAM cluster exists before running the main job.
-- The subprogram must be compiled before the main program for successful linking.
-- Tested on IBM z/OS.
+
+- The VSAM cluster must exist before submitting `COMPRUN.jcl`; the program will abend if `CREDIT.MASTER` is not defined.
+- `SUB1JB23` must be compiled before the main program link step; the JCL handles this with `STEP013` running before `STEP015`.
+- Customers not found in `CREDIT.MASTER` are rejected immediately without calling the subprogram.
+- Tested on IBM z/OS with Enterprise COBOL and VSAM.
