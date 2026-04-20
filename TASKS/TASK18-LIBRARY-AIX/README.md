@@ -225,7 +225,7 @@ BOOKS FOUND (TOTAL):   14
 > **Alternative:** To run individual steps separately:
 
 2. [`JCL/DEFKSDS.jcl`](JCL/DEFKSDS.jcl) — Define VSAM cluster (STEP005)
-3. [`JCL/DATAVSAM.jcl`](JCL/DATAVSAM.jcl) — Load data into base cluster (STEP010)
+3. [`JCL/DATAVSAM.jcl`](JCLSAMPLES/DATAVSAM.jcl) — Load data into base cluster (STEP010)
 4. [`JCL/DEFAIX.jcl`](JCL/DEFAIX.jcl) — Define Alternate Index (STEP015)
 5. [`JCL/DEFPATH.jcl`](JCL/DEFPATH.jcl) — Define PATH (STEP020)
 6. [`JCL/BLDINDX.jcl`](JCL/BLDINDX.jcl) — Build the AIX (STEP025)
