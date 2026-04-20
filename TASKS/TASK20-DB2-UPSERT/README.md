@@ -2,7 +2,7 @@
 
 ## Overview
 
-Synchronizes an external employee data file (`EMP.UPDATE`) with DB2 table `TB_EMPLOYEES`. For each incoming record, the program performs a "Check-and-Apply" (Upsert) logic: if the employee exists, it updates their record and logs any salary changes; if the employee is new, it inserts a new record. Business validation ensures data integrity before any DB2 operations. Commits are performed in batches of 50 operations.
+Synchronizes an external employee data file [`EMP.UPDATE`](DATA/EMP.UPDATE) with DB2 table `TB_EMPLOYEES`. For each incoming record, the program performs a "Check-and-Apply" (Upsert) logic: if the employee exists, it updates their record and logs any salary changes; if the employee is new, it inserts a new record. Business validation ensures data integrity before any DB2 operations. Commits are performed in batches of 50 operations.
 
 The core technique is **Conditional DB2 Upsert (SELECT → UPDATE/INSERT)**: the program first queries the row to determine its state, then branch logic decides whether to execute an `UPDATE` or an `INSERT`.
 
@@ -10,7 +10,7 @@ The core technique is **Conditional DB2 Upsert (SELECT → UPDATE/INSERT)**: the
 
 ## DB2 Table
 
-### `TB_EMPLOYEES`
+### [`TB_EMPLOYEES`](SQL/CREATE.TABLE.sql)
 
 ```sql
 CREATE TABLE TB_EMPLOYEES (
@@ -165,9 +165,9 @@ All input and expected output files are in the [`DATA/`](DATA/) folder.
 
 | File | Description |
 |---|---|
-| [`DATA/EMP.UPDATE`](DATA/EMP.UPDATE) | External employee sync data (24 records) |
-| [`DATA/SYNC.LOG`](DATA/SYNC.LOG) | Sync results log with validation and DB2 action messages |
-| [`DATA/TB.TB_EMPLOYEES`](DATA/TB.TB_EMPLOYEES) | Final state of DB2 table after synchronization |
+| [`EMP.UPDATE`](DATA/EMP.UPDATE) | External employee sync data (24 records) |
+| [`SYNC.LOG`](DATA/SYNC.LOG) | Sync results log with validation and DB2 action messages |
+| [`TB.TB_EMPLOYEES`](DATA/TB.TB_EMPLOYEES) | Final state of DB2 table after synchronization |
 
 ---
 
