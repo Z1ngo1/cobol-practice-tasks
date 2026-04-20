@@ -1,8 +1,7 @@
 # Task 28 — Transaction Journal (ESDS) + Client Report
 
-## Overview
-
-Processes a client list (PS) and for each client performs a full sequential scan of a transaction log (VSAM ESDS) to calculate financial totals. This task demonstrates the specificity of **ESDS (Entry-Sequenced Data Set)**: since records have no keys, individual account lookups require a full file scan from beginning to end.
+## DB2 Tables
+N/A (This task focuses on VSAM ESDS sequential processing).
 
 ---
 
@@ -35,49 +34,85 @@ Processes a client list (PS) and for each client performs a full sequential scan
 
 ## Business Logic
 
-The program processes accounts sequentially from a master list. For each account, it must traverse the entire transaction history stored in an ESDS file.
+Processes accounts from a PS master list. For each account, the program traverses the entire transaction history stored in an ESDS file.
 
-1. **Outer Loop**: Read `ACCT.LIST` (PS).
-2. **Inner Loop**: For each `ACCT-ID`:
+1. **Phase 1 - Client List Processing**:
+    - Read `ACCT.LIST` sequentially.
+    - For each `ACCT-ID`:
+        - Reset `WS-TOTAL-DEBIT` and `WS-TOTAL-CREDIT` to 0.
+        - Start a full scan of the ESDS log.
+2. **Phase 2 - ESDS Log Scan (Per Client)**:
     - **Open** `TRANS.LOG.ESDS` for sequential input.
-    - **Read Next** until EOF.
-    - If `TRANS-ACCT-ID` matches `WS-ACCT-ID`:
-        - If Type = 'D' (Debit) -> Add to `WS-TOTAL-DEBIT`.
-        - If Type = 'C' (Credit) -> Add to `WS-TOTAL-CREDIT`.
-    - **Close** `TRANS.LOG.ESDS` (Preparing for the next client scan).
-3. **Report Generation**:
+    - Read records until EOF.
+    - If `TRANS-ACCT-ID` matches current `ACCT-ID`:
+        - If `TRANS-TYPE = 'D'` -> Accumulate in Debit total.
+        - If `TRANS-TYPE = 'C'` -> Accumulate in Credit total.
+    - **Close** `TRANS.LOG.ESDS` after scan completion to reset pointer for the next client.
+3. **Phase 3 - Summary and Reporting**:
     - **Net Result** = Total Credit - Total Debit.
-    - **Status**:
+    - **Status Mapping**:
         - Both totals = 0 -> `NO TRANS`
-        - Any total != 0 -> `OK`
-    - Write report line: `ACCT-ID`, `DEBIT`, `CREDIT`, `NET`, `STATUS`.
+        - Any total > 0 -> `OK`
+    - Write result to `ACCT.REPORT`.
 
 ---
 
 ## Program Flow
 
-1. **MAIN-LOGIC**: Initializes files and starts the master processing loop.
-2. **READ-ACCT-LIST**: Sequentially reads the client list and triggers account processing.
-3. **PROCESS-TRANS-LOG**: 
-    - Resets totals for the current client.
-    - Opens the ESDS file.
-    - Performs the full sequential scan.
-    - Closes the ESDS file.
-4. **COMPUTE-NET-STATUS**: Calculates financial results and determines the report status.
-5. **WRITE-ACCT-REPORT**: Formats and writes the summary line to the output PS file.
+1. **MAIN-LOGIC**: Controls the high-level flow (Open -> Read -> Close).
+2. **READ-ACCT-LIST**: Outer loop reading the master list of client IDs.
+3. **PROCESS-TRANS-LOG**: Inner loop managing the ESDS file lifecycle (Open, Scan, Close).
+4. **COMPUTE-NET-STATUS**: Performs financial calculations and determines the line status.
+5. **WRITE-ACCT-REPORT**: Formats and writes the summary line using the `STRING` statement.
+
+---
+
+## TEST DATA
+
+### Input: `ACCT.LIST`
+```
+100001
+100002
+100003
+```
+
+### Input: `TRANS.LOG.ESDS`
+```
+100001 20260101 C 000150000 (Credit +1500.00)
+100001 20260105 D 000050000 (Debit -500.00)
+100002 20260110 C 000200000 (Credit +2000.00)
+```
+
+---
+
+## Expected Output (`ACCT.REPORT`)
+
+```
+100001 500.00 1500.00 +1000.00 OK
+100002 0.00 2000.00 +2000.00 OK
+100003 0.00 0.00 +0.00 NO TRANS
+```
+
+---
+
+## How to Run
+
+1. **Define ESDS**: Submit `DEFESDS.jcl` to create the VSAM cluster.
+2. **Prepare Data**: Load test records into `ACCT.LIST` and `TRANS.LOG.ESDS`.
+3. **Execution**: Run the job `ESDS28`.
+4. **Verification**: Verify the results in the `ACCTREP` output dataset.
 
 ---
 
 ## Key COBOL + VSAM Concepts Used
 
-- **VSAM ESDS (Entry-Sequenced Data Set)**: Records are stored in arrival order. No key access is possible; access is strictly sequential or via RBA (Relative Byte Address).
-- **Nested I/O Operations**: Opening and closing a file within a loop to perform multiple sequential passes.
-- **Financial Accumulation**: Using `COMP-3` (Packed Decimal) for efficient financial calculations with implied decimal points.
-- **STRING Statement**: Dynamically building a variable-length report line for the output PS file.
+- **Entry-Sequenced Data Set (ESDS)**: Records are accessed strictly in the order they were written. No primary keys.
+- **Nested File Operations**: Demonstrates that for specific queries on un-indexed files, multiple passes are required.
+- **STRING Statement**: Used for building dynamic report strings from numeric and alphanumeric fields.
+- **COMP-3 (Packed Decimal)**: Used for internal financial counters to save space and improve calculation speed.
 
 ---
 
 ## Notes
-
-- **Performance Tip**: In a real-world scenario with millions of records, this "O(N*M)" approach (scanning the entire ESDS for every client) would be inefficient. One would typically use a KSDS or an AIX (Alternate Index) for direct access, or sort both files by ID to use a single-pass Merge logic. However, this task focuses on understanding **pure ESDS sequential behavior**.
-- **Error Handling**: The program stops immediately (`STOP RUN`) if any mandatory file fails to open or read (Status != '00').
+- This program uses an **O(N*M)** complexity approach (Clients * Transactions).
+- The ESDS file is opened and closed for **each** client to reset the sequential read pointer to the beginning of the dataset.
