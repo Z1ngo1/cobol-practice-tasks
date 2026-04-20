@@ -188,7 +188,7 @@ All input and expected output files are in the [`DATA/`](DATA/) folder.
 |---|---|
 | [`DATA/LIBRARY.MASTER`](DATA/LIBRARY.MASTER) | 14 book records loaded into VSAM base cluster |
 | [`DATA/SEARCH.REQ`](DATA/SEARCH.REQ) | 7 author search requests (created by STEP035) |
-| [`OUTPUT/SYSOUT.txt`](OUTPUT/SYSOUT.txt) | Actual program output from STEP050 execution |
+| [`DATA/RESULT.RPT`](DATA/RESULT.RPT) | Expected output |
 
 ---
 
