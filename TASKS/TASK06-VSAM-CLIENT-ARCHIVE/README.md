@@ -44,24 +44,6 @@ A summary report is printed to SPOOL at the end of the job.
 
 ---
 
-## VSAM KSDS Definition
-
-Кластер определяется так (`DEFKSDS.jcl`):
-
-```
-DEFINE CLUSTER (NAME(Z73460.TASK6.CLIENT.MASTER.VSAM)
-    RECORDSIZE(34,34)
-    TRACKS(15)
-    KEYS(6 0)
-    CISZ(4096)
-    FREESPACE(10,20)
-    INDEXED)
-```
-
-Run [`DEFKSDS.jcl`](JCL/DEFKSDS.jcl) to create the cluster.
-
----
-
 ## Business Logic
 
 | Condition | Action |
