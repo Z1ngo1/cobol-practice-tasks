@@ -30,8 +30,6 @@ CREATE TABLE TB_CUSTOMERS (
 | `PHONE` | `CHAR(10)` | Phone number (validated: 10 numeric digits) |
 | `CREDIT_LIMIT` | `DECIMAL(7,2)` | Credit limit in dollars |
 
-DCLGEN host variable structure is declared in [`DCLGEN/TASK19.cpy`](`DCLGEN/TASK19.cpy`) and included via `EXEC SQL INCLUDE TASK19 END-EXEC`.
-
 ---
 
 ## Files
