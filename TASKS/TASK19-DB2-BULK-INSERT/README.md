@@ -201,24 +201,6 @@ CLOSE-ALL-FILES:
 
 ---
 
-## JCL Steps (`COBDB2CP.jcl`)
-
-| Step | Program | COND | Description |
-|---|---|---|---|
-| DELREP | IEFBR14 | — | Delete old `SUCCESS.LOG` if it exists (MOD,DELETE,DELETE) |
-| COMPIL | DB2CBL | — | DB2 precompile + COBOL compile: source from `Z73460.COB.PRAC(DB2JOB19)`, DCLGEN from `Z73460.DCLGEN` |
-| RUNPROG | IKJEFT01 | (4,LT) | Execute DB2JOB19 under DB2 subsystem `DBDG` with PLAN `Z73460` |
-
-**RUNPROG SYSTSIN**:
-```
-DSN SYSTEM(DBDG)
-RUN PROGRAM(DB2JOB19) PLAN(Z73460) -
-    LIB('Z73460.LOAD')
-END
-```
-
----
-
 ## Expected SYSOUT
 
 Actual job output is stored in [`OUTPUT/SYSOUT.txt`](OUTPUT/SYSOUT.txt).
