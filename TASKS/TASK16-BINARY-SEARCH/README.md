@@ -2,14 +2,14 @@
 
 ## Overview
 
-Reads a parts catalog file (`PARTS.CATALOG`) into an in-memory array (`CATALOG-TABLE`), then processes a customer orders file (`ORDERS.FILE`) and writes an invoice output (`INVOICE.TXT`) with the calculated order total for each order.
+Reads a parts catalog file [`PARTS.CATALOG`](DATA/PARTS.CATALOG) into an in-memory array (`CATALOG-TABLE`), then processes a customer orders file [`ORDERS.FILE`](DATA/ORDERS.FILE) and writes an invoice output [`INVOICE.TXT`](DATA/INVOICE.TXT) with the calculated order total for each order.
 The core technique is **`SEARCH ALL`** (binary search): unlike `SEARCH` which walks the table linearly, `SEARCH ALL` performs a binary search and requires the table to be declared with `ASCENDING KEY` and the input file to be pre-sorted by that key. The table uses `DEPENDING ON PARTS-LOADED` so `SEARCH ALL` scans only the loaded entries.
 
 ---
 
 ## Critical Prerequisite: `PARTS.CATALOG` Must Be Sorted by `PART-ID` Ascending
 
-> **`PARTS.CATALOG` must be sorted by `PART-ID` in ascending order before this program runs.**
+> **[`PARTS.CATALOG`](DATA/PARTS.CATALOG) must be sorted by `PART-ID` in ascending order before this program runs.**
 
 `SEARCH ALL` (binary search) assumes the table is sorted by the `ASCENDING KEY` declared in the `OCCURS` clause. Unsorted input will produce **incorrect results or missed matches without any error message or ABEND**. Use a `SORT` step in the JCL before the program step if your input is not already sorted.
 
@@ -151,9 +151,9 @@ All input and expected output files are in the [`DATA/`](DATA/) folder.
 
 | File | Description |
 |---|---|
-| [`DATA/PARTS.CATALOG`](DATA/PARTS.CATALOG) | 9 part entries, sorted by `PART-ID` ascending |
-| [`DATA/ORDERS.FILE`](DATA/ORDERS.FILE) | 12 customer order records |
-| [`DATA/INVOICE.TXT`](DATA/INVOICE.TXT) | Expected invoice output |
+| [`PARTS.CATALOG`](DATA/PARTS.CATALOG) | 9 part entries, sorted by `PART-ID` ascending |
+| [`ORDERS.FILE`](DATA/ORDERS.FILE) | 12 customer order records |
+| [`INVOICE.TXT`](DATA/INVOICE.TXT) | Expected invoice output |
 
 ---
 
