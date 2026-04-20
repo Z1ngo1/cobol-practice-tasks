@@ -9,7 +9,7 @@ Commits every 50 records. Any SQL error triggers a full `ROLLBACK` and `STOP RUN
 
 ## DB2 Table
 
-### `TB_SALES_BONUS`
+### [`TB_SALES_BONUS`](SQL/CREATE.TABLE.sql)
 
 ```sql
 CREATE TABLE TB_SALES_BONUS (
@@ -112,11 +112,11 @@ SQL scripts and expected output are stored in [`SQL/`](SQL/) and [`DATA/`](DATA/
 
 | File | Description |
 |---|---|
-| [`SQL/CREATE.TABLE.sql`](SQL/CREATE.TABLE.sql) | DDL to create `TB_SALES_BONUS` table |
-| [`SQL/INSERT.DATA.sql`](SQL/INSERT.DATA.sql) | DML to load 10 test employee records |
-| [`DATA/TB.TB_SALES_BONUS.BEFORE`](DATA/TB.TB_SALES_BONUS.BEFORE) | Table state before bonus indexing |
-| [`DATA/TB.TB_SALES_BONUS.AFTER`](DATA/TB.TB_SALES_BONUS.AFTER) | Expected table state after bonus indexing |
-| [`DATA/BONUS.REPORT`](DATA/BONUS.REPORT) | Expected report output file |
+| [`CREATE.TABLE.sql`](SQL/CREATE.TABLE.sql) | DDL to create `TB_SALES_BONUS` table |
+| [`INSERT.DATA.sql`](SQL/INSERT.DATA.sql) | DML to load 10 test employee records |
+| [`TB.TB_SALES_BONUS.BEFORE`](DATA/TB.TB_SALES_BONUS.BEFORE) | Table state before bonus indexing |
+| [`TB.TB_SALES_BONUS.AFTER`](DATA/TB.TB_SALES_BONUS.AFTER) | Expected table state after bonus indexing |
+| [`BONUS.REPORT`](DATA/BONUS.REPORT) | Expected report output file |
 
 ---
 
