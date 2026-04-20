@@ -9,7 +9,7 @@ Commits every 100 records to avoid long-running units of work. Any SQL error tri
 
 ## DB2 Table
 
-### `TB_EMP_SALARY`
+### [`TB_EMP_SALARY`](SQL/CREATE.TABLE.sql)
 
 ```sql
 CREATE TABLE TB_EMP_SALARY (
