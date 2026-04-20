@@ -135,6 +135,7 @@ BONUS UPDATE COMPLETED: 00010
 1. **Create DB2 table** - run [`CREATE.TABLE.sql`](SQL/CREATE.TABLE.sql) via SPUFI or DSNTEP2
 2. **Load test data** - run [`INSERT.DATA.sql`](SQL/INSERT.DATA.sql) via SPUFI or DSNTEP2
 3. **Compile and run** - run [`COBDB2CP.jcl`](JCL/COBDB2CP.jcl)
+4. **Compare output files and sysout** - see [`TB.TB_SALES_BONUS.AFTER`](DATA/TB.TB_SALES_BONUS.AFTER), [`BONUS.REPORT`](DATA/BONUS.REPORT) and [`SYSOUT.txt`](OUTPUT/SYSOUT.txt)
 
 ---
 
