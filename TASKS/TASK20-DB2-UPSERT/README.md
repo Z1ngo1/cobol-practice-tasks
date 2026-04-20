@@ -159,16 +159,6 @@ The program uses a batch commit approach to optimize performance:
 
 ---
 
-## JCL Steps (`COBDB2CP.jcl`)
-
-| Step | Program | COND | Description |
-|---|---|---|---|
-| DELREP | IEFBR14 | — | Delete existing `SYNC.LOG` |
-| COMPIL | DB2CBL | — | DB2 precompile + COBOL compile for `DB2JOB20` |
-| RUNPROG | IKJEFT01 | (4,LT) | Execute under DB2 control (Subsystem `DBDG`, Plan `Z73460`) |
-
----
-
 ## Expected SYSOUT
 
 Actual job output is stored in [`OUTPUT/SYSOUT.txt`](OUTPUT/SYSOUT.txt).
@@ -189,8 +179,8 @@ COMMIT BATCHES:     1
 
 ## How to Run
 
-1. Execute SQL in `SQL/CREATE-TABLE.sql` to prepare the DB2 table
-2. Upload input data to `Z73460.TASK20.EMP.UPDATE`
+1. Execute SQL in [`SQL/CREATE.TABLE.sql`](SQL/CREATE.TABLE.sql) to prepare the DB2 table
+2. Upload input data to `Z73460.TASK20.EMP.UPDATE` dataset or use pre-prepared test data
 3. Submit [`JCL/COBDB2CP.jcl`](JCL/COBDB2CP.jcl) to run the sync process
 
 ---
