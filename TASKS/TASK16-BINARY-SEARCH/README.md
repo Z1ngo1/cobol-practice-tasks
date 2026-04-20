@@ -7,7 +7,7 @@ The core technique is **`SEARCH ALL`** (binary search): unlike `SEARCH` which wa
 
 ---
 
-## Critical Prerequisite: `PARTS.CATALOG` Must Be Sorted by `PART-ID` Ascending
+## Critical Prerequisite: [`PARTS.CATALOG`](DATA/PARTS.CATALOG) Must Be Sorted by `PART-ID` Ascending
 
 > **[`PARTS.CATALOG`](DATA/PARTS.CATALOG) must be sorted by `PART-ID` in ascending order before this program runs.**
 
@@ -19,9 +19,9 @@ The core technique is **`SEARCH ALL`** (binary search): unlike `SEARCH` which wa
 
 | DD Name | File | Org | Mode | Description |
 |---|---|---|---|---|
-| `PARTDD` | `PARTS.CATALOG` | PS | INPUT | Parts catalog — part ID + price; pre-sorted by `PART-ID` ascending |
-| `ORDRDD` | `ORDERS.FILE` | PS | INPUT | Customer orders — order number, part ID, quantity |
-| `INVODD` | `INVOICE.TXT` | PS | OUTPUT | Invoice lines — one line per order with order number and total cost |
+| `PARTDD` | [`PARTS.CATALOG`](DATA/PARTS.CATALOG) | PS | INPUT | Parts catalog — part ID + price; pre-sorted by `PART-ID` ascending |
+| `ORDRDD` | [`ORDERS.FILE`](DATA/ORDERS.FILE) | PS | INPUT | Customer orders — order number, part ID, quantity |
+| `INVODD` | [`INVOICE.TXT`](DATA/INVOICE.TXT) | PS | OUTPUT | Invoice lines — one line per order with order number and total cost |
 
 ### Input Record Layout — `PARTS.CATALOG` (`PARTDD`), LRECL=10, RECFM=F
 
@@ -159,7 +159,7 @@ All input and expected output files are in the [`DATA/`](DATA/) folder.
 
 ## Expected SYSOUT
 
-Actual job output is stored in [`OUTPUT/SYSOUT.txt`](OUTPUT/SYSOUT.txt).
+Actual job output is stored in [`SYSOUT.txt`](OUTPUT/SYSOUT.txt).
 
 ```
 ========================================
@@ -177,10 +177,11 @@ PARTS NOT FOUND:       6
 
 ## How to Run
 
-1. Upload [`DATA/PARTS.CATALOG`](DATA/PARTS.CATALOG) and [`DATA/ORDERS.FILE`](DATA/ORDERS.FILE) to your mainframe datasets manually through option '3.4 and edit your dataset' or with pre-prepared data
-2. Submit [`JCL/COMPRUN.jcl`](JCL/COMPRUN.jcl) with pre-prepared data
+1. Upload [`PARTS.CATALOG`](DATA/PARTS.CATALOG) and [`ORDERS.FILE`](DATA/ORDERS.FILE) to your mainframe datasets manually through option '3.4 and edit your dataset' or with pre-prepared data
+2. Submit [`COMPRUN.jcl`](JCL/COMPRUN.jcl) with pre-prepared data
+3. Compare output files and sysout - see [`INVOICE.TXT`](DATA/INVOICE.TXT) and [`SYSOUT.txt`](OUTPUT/SYSOUT.txt)
 
-> **PROC reference:** [`JCL/COMPRUN.jcl`](JCL/COMPRUN.jcl) uses the [`MYCOMPGO`](../../JCLPROC/MYCOMPGO.jcl) catalogued procedure for compilation and execution. Make sure [`MYCOMPGO`](../../JCLPROC/MYCOMPGO.jcl) is available in your system's `PROCLIB` before submitting.
+> **PROC reference:** [`COMPRUN.jcl`](JCL/COMPRUN.jcl) uses the [`MYCOMPGO`](../../JCLPROC/MYCOMPGO.jcl) catalogued procedure for compilation and execution. Make sure [`MYCOMPGO`](../../JCLPROC/MYCOMPGO.jcl) is available in your system's `PROCLIB` before submitting.
 
 ---
 
