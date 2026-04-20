@@ -1,67 +1,166 @@
-# Task 22: Sales Commission with Subprogram Calls
+# Task 22 — Sales Commission Payout with Subprogram Calls
 
 ## Overview
-This task demonstrates the modularity of COBOL by implementing a Sales Commission Payout System. The system consists of a main program that coordinates the processing and two specialized subprograms for calculation logic.
-1.  **Main Program (`JOBSUB22`)**: Reads employee sales records, calls subprograms, and generates the final payout report.
-2.  **Commission Subprogram (`SUB1JB22`)**: Calculates commission rates based on geographical region and total sales volume.
-3.  **Tax Subprogram (`SUB2JB22`)**: Calculates the tax amount based on the calculated commission brackets.
+
+Implements a modular COBOL batch system that reads employee sales records from a sequential file, computes commission and tax amounts by calling two specialized subprograms, and writes a formatted payout report. The system demonstrates inter-program communication via `CALL ... USING` and the `LINKAGE SECTION`.
+
+The three programs work together:
+- **`JOBSUB22`** (Main) — reads `SALES.DATA`, calls `SUB1JB22` and `SUB2JB22` for each record, writes results to `COMM.PAYOUT`.
+- **`SUB1JB22`** (Commission Calculator) — receives region and sales amount; returns commission amount based on regional base rate and volume bonus.
+- **`SUB2JB22`** (Tax Calculator) — receives commission amount; returns tax amount based on bracket rules.
+
+---
 
 ## Files
-- `COBOL/JOBSUB22.cbl`: Main driver program.
-- `COBOL/SUB1JB22.cbl`: Subprogram 1 - Commission Calculator (COMMCALC logic).
-- `COBOL/SUB2JB22.cbl`: Subprogram 2 - Tax Calculator (TAXCALC logic).
-- `JCL/COMPRUN.jcl`: Job to create input data, compile all components, and execute the system.
-- `DATA/SALES.txt`: (Defined in JCL) Sequential input file with sales data.
-- `OUTPUT/COMM.PAYOUT`: Generated report showing commission, tax, and net payout.
 
-## Record Layouts
-### Input Sales Record (`SALES.DATA`) — LRECL=80
+| DD Name | File | Org | Mode | Description |
+|---|---|---|---|---|
+| `SALESDD` | `SALES.DATA` | PS | INPUT | Sequential sales input, RECFM=F, LRECL=80 |
+| `PAYOUTDD` | `COMM.PAYOUT` | PS | OUTPUT | Formatted commission payout report |
+
+### Input Record Layout — `SALES.DATA` (`SALESDD`), LRECL=80, RECFM=F
+
 | Field | Position | Format | Description |
-| :--- | :--- | :--- | :--- |
-| `EMP-ID` | 1-5 | `X(5)` | Employee Identifier |
-| `REGION` | 6-7 | `X(2)` | Sales Region (NY, CA, TX, etc.) |
-| `SALES-AMT`| 8-15 | `9(6)V99`| Total Sales Amount |
-| `FILLER` | 16-80 | `X(65)` | Reserved |
+|---|---|---|---|
+| `EMP-ID` | 1–5 | `X(5)` | Employee identifier |
+| `REGION` | 6–7 | `X(2)` | Sales region code (`NY`, `CA`, `TX`, or other) |
+| `SALES-AMT` | 8–15 | `9(6)V99` | Total sales amount in dollars |
+| `FILLER` | 16–80 | `X(65)` | Reserved |
 
-## Processing Logic
-### 1. Commission Calculation (`SUB1JB22`)
-Calculates the commission amount based on the following rules:
-- **Base Rate by Region**:
-    - `NY`: 5%
-    - `CA`: 7%
-    - `TX`: 3%
-    - Others: 4%
-- **Volume Bonus**:
-    - Sales >= $100,000: +2% bonus rate
-    - Sales >= $50,000: +1% bonus rate
-- **Formula**: `Commission = Sales * (Base Rate + Bonus Rate)`
+### Output Record Layout — `COMM.PAYOUT` (`PAYOUTDD`)
 
-### 2. Tax Calculation (`SUB2JB22`)
-Calculates the tax to be deducted from the commission:
-- Commission < $1,000: 15% tax
-- $1,000 <= Commission < $5,000: 20% tax
-- Commission >= $5,000: 25% tax
+| Field | Picture | Description |
+|---|---|---|
+| `PAYOUT-LINE` | `X(80)` | Formatted line: `<EMP-ID> COMMISSION: <amt>, TAX: <amt>, NET: <amt>` |
 
-### 3. Output Generation
-The main program computes the Net Payout (`Commission - Tax`) and writes a formatted line to the output file.
+---
 
-## JCL Steps
-- **`STEP005`**: Deletes previous output and input datasets.
-- **`STEP010`**: Uses `IEBGENER` to populate the `SALES.DATA` file with sample records.
-- **`STEP015`**: Compiles the main program and subprograms, links them, and executes the final module.
+## Business Logic
 
-## Key COBOL Concepts Used
-- **Inter-Program Communication**: Using `CALL ... USING` to pass data between programs via the `LINKAGE SECTION`.
-- **Modular Design**: Separating business rules (commission/tax) from I/O processing.
-- **`EVALUATE` Statement**: Handling multiple conditions for regions and tax brackets efficiently.
-- **`STRING` with `FUNCTION TRIM`**: Building formatted output lines dynamically.
+### Phase 1 — Commission Calculation (`SUB1JB22`)
+
+Commission is calculated as: `COMMISSION = SALES-AMT × (BASE-RATE + BONUS-RATE)`
+
+**Base rate by region:**
+
+| Region | Base Rate |
+|---|---|
+| `NY` | 5% |
+| `CA` | 7% |
+| `TX` | 3% |
+| Other | 4% |
+
+**Volume bonus (applied on top of base rate):**
+
+| Sales Amount | Bonus |
+|---|---|
+| >= $100,000 | +2% |
+| >= $50,000 | +1% |
+| < $50,000 | 0% |
+
+### Phase 2 — Tax Calculation (`SUB2JB22`)
+
+Tax is deducted from the calculated commission:
+
+| Commission Range | Tax Rate |
+|---|---|
+| < $1,000 | 15% |
+| $1,000 – $4,999.99 | 20% |
+| >= $5,000 | 25% |
+
+### Phase 3 — Net Payout
+
+Main program computes: `NET-PAYOUT = COMMISSION - TAX`
+
+Each record produces one formatted output line written to `COMM.PAYOUT`.
+
+---
+
+## Program Flow
+
+1. `OPEN-FILES` — open `SALES-FILE` (INPUT) and `PAYOUT-FILE` (OUTPUT); check FILE STATUS for both.
+2. `READ` first record from `SALES-FILE`.
+3. `PROCESS-ALL-RECORDS` — main loop until `AT END`:
+   - 3.1. Move `SALES-AMT` and `REGION` to linkage parameters.
+   - 3.2. `CALL 'SUB1JB22' USING WS-REGION, WS-SALES-AMT, WS-COMMISSION` — receive commission amount.
+   - 3.3. `CALL 'SUB2JB22' USING WS-COMMISSION, WS-TAX` — receive tax amount.
+   - 3.4. Compute `WS-NET = WS-COMMISSION - WS-TAX`.
+   - 3.5. Format and `WRITE` output line to `PAYOUT-FILE`.
+   - 3.6. Increment records-processed counter.
+   - 3.7. `READ` next record.
+4. `CLOSE-FILES` — close both files.
+5. `DISPLAY-SUMMARY` — print records processed to SYSOUT.
+6. `STOP RUN`.
+
+---
+
+## Test Data
+
+All input and output files are in the [`DATA/`](DATA/) folder.
+
+| File | Description |
+|---|---|
+| [`DATA/SALES.DATA`](DATA/SALES.DATA) | 7 employee sales records (input) |
+| [`DATA/COMM.PAYOUT`](DATA/COMM.PAYOUT) | Commission payout report (output) |
+
+Sample input records:
+
+```
+00100NY15000000
+00200CA05000000
+00300TX00500000
+00400FL00800000
+00500NY00050000
+00600CA00090000
+00700TX01200000
+```
+
+---
+
+## Expected SYSOUT
+
+```
+RECORDS PROCESSED: 7
+```
+
+Expected output in `COMM.PAYOUT`:
+
+```
+00100 COMMISSION: 10500.00, TAX: 2625.00, NET: 7875.00
+00200 COMMISSION:  4000.00, TAX:  800.00, NET: 3200.00
+00300 COMMISSION:   150.00, TAX:   22.50, NET:  127.50
+00400 COMMISSION:   320.00, TAX:   48.00, NET:  272.00
+00500 COMMISSION:    25.00, TAX:    3.75, NET:   21.25
+00600 COMMISSION:    63.00, TAX:    9.45, NET:   53.55
+00700 COMMISSION:   360.00, TAX:   54.00, NET:  306.00
+```
+
+---
 
 ## How to Run
-1.  Verify the dataset names in `JCL/COMPRUN.jcl` match your environment.
-2.  Submit the JCL to compile and run the entire suite.
-3.  Check `Z73460.TASK22.COMM.PAYOUT` for the results.
+
+1. Verify dataset name prefix in [`JCL/COMPRUN.jcl`](JCL/COMPRUN.jcl) matches your environment (e.g. `Z73460.TASK22.*`).
+2. Submit `JCL/COMPRUN.jcl`. The job will:
+   - Delete previous datasets (`STEP005`).
+   - Populate `SALES.DATA` via `IEBGENER` (`STEP010`).
+   - Compile all three COBOL programs, link them into one load module, and run (`STEP015`).
+3. Check `Z73460.TASK22.COMM.PAYOUT` for the payout report.
+
+---
+
+## Key COBOL Concepts Used
+
+- **`CALL ... USING`** — passes data areas by reference between the main program and subprograms.
+- **`LINKAGE SECTION`** — defines the parameter interface inside each subprogram (`SUB1JB22`, `SUB2JB22`).
+- **Modular Design** — separates I/O logic (main), commission rules (SUB1), and tax rules (SUB2) into independent compilation units.
+- **`EVALUATE` Statement** — used in both subprograms to handle multiple region codes and tax brackets cleanly.
+- **`STRING` with `FUNCTION TRIM`** — builds formatted output lines dynamically from computed numeric values.
+
+---
 
 ## Notes
-- Ensure all subprograms are compiled and accessible to the main program's load module at runtime.
-- The system handles invalid regions by applying a default 4% base rate.
-- Tested on IBM z/OS.
+
+- All three programs are compiled and linked into a single load module by the JCL; `SUB1JB22` and `SUB2JB22` must be present at link time.
+- An unrecognised region code defaults to a 4% base rate — no validation error is raised.
+- The volume bonus thresholds ($50,000 and $100,000) are evaluated in descending order so the higher bonus is applied first.
+- Tested on IBM z/OS with Enterprise COBOL.
