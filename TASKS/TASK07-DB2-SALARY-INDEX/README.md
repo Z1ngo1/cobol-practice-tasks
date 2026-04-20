@@ -2,7 +2,7 @@
 
 ## Overview
 
-Reads all employee records from DB2 table `TB_EMP_SALARY` via a scrollable cursor, applies a salary increase by department, caps the result at 100,000, updates each row in place using `UPDATE WHERE CURRENT OF`, and writes a salary change report to a PS file.
+Reads all employee records from DB2 table [`TB_EMP_SALARY`](DATA/TB.TB_EMP_SALARY.BEFORE) via a scrollable cursor, applies a salary increase by department, caps the result at 100,000, updates each row in place using `UPDATE WHERE CURRENT OF`, and writes a salary change report to a PS file.
 Commits every 100 records to avoid long-running units of work. Any SQL error triggers a full `ROLLBACK` and `STOP RUN`.
 
 ---
@@ -36,7 +36,7 @@ DCLGEN host variable structure is declared in [`DCLGEN/TASK7.cpy`](DCLGEN/TASK7.
 
 | DD Name | File | Org | Mode | Description |
 |---|---|---|---|---|
-| `OUTDD` | `REPORT.FILE` | PS | OUTPUT | Salary change report, LRECL=80 |
+| `OUTDD` | [`REPORT.FILE`](DATA/SALARY.REPORT) | PS | OUTPUT | Salary change report, LRECL=80 |
 
 ### Report Record Layout (`OUTDD`) — LRECL=80, RECFM=F
 
@@ -112,7 +112,7 @@ SQL scripts and expected output are stored in [`SQL/`](SQL/) and [`DATA/`](DATA/
 
 ## Expected SYSOUT
 
-Actual job output is stored in [`OUTPUT/SYSOUT.txt`](OUTPUT/SYSOUT.txt).
+Actual job output is stored in [`SYSOUT.txt`](OUTPUT/SYSOUT.txt).
 
 ```
 SALARY INDEXING COMPLETED:  10
@@ -122,9 +122,9 @@ SALARY INDEXING COMPLETED:  10
 
 ## How to Run
 
-1. **Create DB2 table** — run [`SQL/CREATE.TABLE.sql`](SQL/CREATE.TABLE.sql) via SPUFI or DSNTEP2
-2. **Load test data** — run [`SQL/INSERT.DATA.sql`](SQL/INSERT.DATA.sql) via SPUFI or DSNTEP2
-3. **Compile and run** — run [`JCL/COBDB2CP.jcl`](JCL/COBDB2CP.jcl)
+1. **Create DB2 table** — run [`CREATE.TABLE.sql`](SQL/CREATE.TABLE.sql) via SPUFI or DSNTEP2
+2. **Load test data** — run [`INSERT.DATA.sql`](SQL/INSERT.DATA.sql) via SPUFI or DSNTEP2
+3. **Compile and run** — run [`COBDB2CP.jcl`](JCL/COBDB2CP.jcl)
 
 ---
 
