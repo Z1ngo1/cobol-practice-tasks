@@ -11,11 +11,11 @@ The core technique is the **COBOL `SORT` statement with `INPUT PROCEDURE` and `O
 
 | DD Name | File | Org | Mode | Description |
 |---|---|---|---|---|
-| `EXDD` | `EXAM.RAW` | PS | INPUT | Raw exam results — unsorted, may contain failing scores |
-| `SRTDD` | `WORK.SORT` | SD | TEMP | Sort work file — temporary, deleted after job |
-| `HNRDD` | `HONOR.ROLL` | PS | OUTPUT | Sorted honor roll — passing students only, sorted by class and score |
+| `EXDD` | [`EXAM.RAW`](DATA/EXAM.RAW) | PS | INPUT | Raw exam results — unsorted, may contain failing scores |
+| `SRTDD` | [`WORK.SORT`] | SD | TEMP | Sort work file — temporary, deleted after job |
+| `HNRDD` | [`HONOR.ROLL`](DATA/HONOR.ROLL) | PS | OUTPUT | Sorted honor roll — passing students only, sorted by class and score |
 
-### Input Record Layout — `EXAM.RAW` (`EXDD`), LRECL=31, RECFM=F
+### Input Record Layout — (`EXDD`), LRECL=31, RECFM=F
 
 | Field | Picture | Offset | Description |
 |---|---|---|---|
@@ -24,12 +24,12 @@ The core technique is the **COBOL `SORT` statement with `INPUT PROCEDURE` and `O
 | `STUD-CLASS` | `X(3)` | 26 | Class code — primary sort key, ascending |
 | `STUD-SCORE` | `9(3)` | 29 | Exam score — secondary sort key, descending; filter threshold |
 
-### Sort Work File Layout — `WORK.SORT` (`SRTDD`), LRECL=31, RECFM=F
+### Sort Work File Layout — (`SRTDD`), LRECL=31, RECFM=F
 
 Declared as `SD` (Sort Description). Same field layout as `EXAM.RAW`:
 `SORT-ID X(5)`, `SORT-NAME X(20)`, `SORT-CLASS X(3)`, `SORT-SCORE 9(3)`.
 
-### Output Record Layout — `HONOR.ROLL` (`HNRDD`), LRECL=31, RECFM=F
+### Output Record Layout — (`HNRDD`), LRECL=31, RECFM=F
 
 | Field | Picture | Offset | Description |
 |---|---|---|---|
@@ -174,7 +174,7 @@ All input and expected output files are in the [`DATA/`](DATA/) folder.
 
 ## Expected SYSOUT
 
-Actual job output is stored in [`OUTPUT/SYSOUT.txt`](OUTPUT/SYSOUT.txt).
+Actual job output is stored in [`SYSOUT.txt`](OUTPUT/SYSOUT.txt).
 
 ```
 ========================================
@@ -191,10 +191,11 @@ RECORDS WRITTEN:      15
 
 ## How to Run
 
-1. Upload [`DATA/EXAM.RAW`](DATA/EXAM.RAW) to your mainframe dataset manually through option '3.4 and edit your dataset' or with pre-prepared data
-2. Submit [`JCL/COMPRUN.jcl`](JCL/COMPRUN.jcl) with pre-prepared data
+1. Upload [`EXAM.RAW`](DATA/EXAM.RAW) to your mainframe dataset manually through option '3.4 and edit your dataset' or with pre-prepared data
+2. Submit [`COMPRUN.jcl`](JCL/COMPRUN.jcl) with pre-prepared data
+3. Compare output files and sysout - see [`HONOR.ROLL`](DATA/HONOR.ROLL) and [`SYSOUT.txt`](OUTPUT/SYSOUT.txt)
 
-> **PROC reference:** [`JCL/COMPRUN.jcl`](JCL/COMPRUN.jcl) uses the [`MYCOMPGO`](../../JCLPROC/MYCOMPGO.jcl) catalogued procedure for compilation and execution. Make sure [`MYCOMPGO`](../../JCLPROC/MYCOMPGO.jcl) is available in your system's `PROCLIB` before submitting.
+> **PROC reference:** [`COMPRUN.jcl`](JCL/COMPRUN.jcl) uses the [`MYCOMPGO`](../../JCLPROC/MYCOMPGO.jcl) catalogued procedure for compilation and execution. Make sure [`MYCOMPGO`](../../JCLPROC/MYCOMPGO.jcl) is available in your system's `PROCLIB` before submitting.
 
 > **Note:** `WORK.SORT` (`SRTDD`) is defined as `DISP=(NEW,DELETE,DELETE)` in the JCL — it is a temporary dataset that is automatically deleted after the job completes regardless of return code.
 
