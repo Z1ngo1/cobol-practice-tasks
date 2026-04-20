@@ -30,7 +30,7 @@ CREATE TABLE TB_CUSTOMERS (
 | `PHONE` | `CHAR(10)` | Phone number (validated: 10 numeric digits) |
 | `CREDIT_LIMIT` | `DECIMAL(7,2)` | Credit limit in dollars |
 
-DCLGEN host variable structure is declared in `DCLGEN/TASK19.cpy` (`DCLGEN/TASK19.cpy`) and included via `EXEC SQL INCLUDE TASK19 END-EXEC`.
+DCLGEN host variable structure is declared in [`DCLGEN/TASK19.cpy`](`DCLGEN/TASK19.cpy`) and included via `EXEC SQL INCLUDE TASK19 END-EXEC`.
 
 ---
 
@@ -38,10 +38,10 @@ DCLGEN host variable structure is declared in `DCLGEN/TASK19.cpy` (`DCLGEN/TASK1
 
 | DD Name | File | Org | Mode | Description |
 |---|---|---|---|---|
-| `INDD` | `NEW.CUSTOMER` | PS | INPUT | New customer records, RECFM=FB, LRECL=93 |
-| `OUTDD` | `SUCCESS.LOG` | PS | OUTPUT | Import results log, RECFM=VB, LRECL=84 |
+| `INDD` | [`NEW.CUSTOMER`](DATA/NEW.CUSTOMER) | PS | INPUT | New customer records, RECFM=FB, LRECL=93 |
+| `OUTDD` | [`SUCCESS.LOG`](DATA/SUCCESS.LOG) | PS | OUTPUT | Import results log, RECFM=VB, LRECL=84 |
 
-### Input Record Layout — `NEW.CUSTOMER` (`INDD`), LRECL=93, RECFM=FB
+### Input Record Layout — (`INDD`), LRECL=93, RECFM=FB
 
 | Field | Picture | Offset | Description |
 |---|---|---|---|
@@ -51,7 +51,7 @@ DCLGEN host variable structure is declared in `DCLGEN/TASK19.cpy` (`DCLGEN/TASK1
 | `INP-PHONE` | `X(10)` | 77 | Phone number — must be 10 numeric digits |
 | `INP-LIMIT` | `9(5)V99` | 87 | Credit limit (unpacked decimal) |
 
-### Output Record Layout — `SUCCESS.LOG` (`OUTDD`), RECFM=VB, LRECL=84
+### Output Record Layout — (`OUTDD`), RECFM=VB, LRECL=84
 
 | Field | Picture | Description |
 |---|---|---|
@@ -216,7 +216,7 @@ All input and expected output files are in the [`DATA/`](DATA/) folder.
 
 ## Expected SYSOUT
 
-Actual job output is stored in [`OUTPUT/SYSOUT.txt`](OUTPUT/SYSOUT.txt).
+Actual job output is stored in [`SYSOUT.txt`](OUTPUT/SYSOUT.txt).
 
 ```
 ========================================
@@ -233,9 +233,9 @@ COMMIT BATCHES:     1
 
 ## How to Run
 
-1. Create the DB2 table by executing the SQL in [`SQL/CREATE.TABLE.sql`](SQL/CREATE.TABLE.sql) (if not already created)
-2. Upload customer data [`DATA/NEW.CUSTOMER`](DATA/NEW.CUSTOMER) to dataset or use pre-prepared test data in jcl
-3. Submit [`JCL/COBDB2CP.jcl`](JCL/COBDB2CP.jcl) — it handles DB2 precompile, COBOL compile, and program execution
+1. Create the DB2 table by executing the SQL in [`CREATE.TABLE.sql`](SQL/CREATE.TABLE.sql) (if not already created)
+2. Upload customer data [`NEW.CUSTOMER`](DATA/NEW.CUSTOMER) to dataset or use pre-prepared test data in jcl
+3. Submit [`COBDB2CP.jcl`](JCL/COBDB2CP.jcl) — it handles DB2 precompile, COBOL compile, and program execution
 
 ---
 
