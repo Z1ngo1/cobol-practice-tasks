@@ -38,8 +38,8 @@ CREATE TABLE TB_EMPLOYEES (
 
 | DD Name | File | Org | Mode | Description |
 |---|---|---|---|---|
-| `INDD` | `EMP.UPDATE` | PS | INPUT | External sync data, RECFM=F, LRECL=44 |
-| `OUTDD` | `SYNC.LOG` | PS | OUTPUT | Sync results log, RECFM=VB, LRECL=84 |
+| `INDD` | [`EMP.UPDATE`](DATA/EMP.UPDATE) | PS | INPUT | External sync data, RECFM=F, LRECL=44 |
+| `OUTDD` | [`SYNC.LOG`](DATA/SYNC.LOG) | PS | OUTPUT | Sync results log, RECFM=VB, LRECL=84 |
 
 ### Input Record Layout — `EMP.UPDATE` (`INDD`), LRECL=44, RECFM=F
 
@@ -173,7 +173,7 @@ All input and expected output files are in the [`DATA/`](DATA/) folder.
 
 ## Expected SYSOUT
 
-Actual job output is stored in [`OUTPUT/SYSOUT.txt`](OUTPUT/SYSOUT.txt).
+Actual job output is stored in [`SYSOUT.txt`](OUTPUT/SYSOUT.txt).
 
 ```
 ========================================
@@ -191,9 +191,10 @@ COMMIT BATCHES:     1
 
 ## How to Run
 
-1. Execute SQL in [`SQL/CREATE.TABLE.sql`](SQL/CREATE.TABLE.sql) to prepare the DB2 table
+1. Execute SQL in [`CREATE.TABLE.sql`](SQL/CREATE.TABLE.sql) to prepare the DB2 table
 2. Upload input data [`EMP.UPDATE`](DATA/EMP.UPDATE) to dataset or use pre-prepared test data in jcl
-3. Submit [`JCL/COBDB2CP.jcl`](JCL/COBDB2CP.jcl) to run the sync process
+3. Submit [`COBDB2CP.jcl`](JCL/COBDB2CP.jcl) to run the sync process
+4. Compare output files and sysout - see [`SYNC.LOG`](DATA/SYNC.LOG), [`TB.TB_EMPLOYEES`](DATA/TB.TB_EMPLOYEES) and [`SYSOUT.txt`](OUTPUT/SYSOUT.txt)
 
 ---
 
