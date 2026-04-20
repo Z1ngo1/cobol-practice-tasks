@@ -8,7 +8,7 @@ The tier table is loaded once into memory before any salary record is processed.
 
 ---
 
-## Critical Prerequisite: `COMM.TIERS` Must Be Sorted by `COMM-LIMIT` Ascending
+## Critical Prerequisite: [`COMM.TIERS`](./DATA/COMM.TIERS) Must Be Sorted by `COMM-LIMIT` Ascending
 
 > **[`COMM.TIERS`](./DATA/COMM.TIERS) must be sorted by `COMM-LIMIT` in ascending order before this program runs.**
 
