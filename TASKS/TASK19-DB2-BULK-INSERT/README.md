@@ -67,9 +67,9 @@ Status messages:
 
 ---
 
-## Four-Phase Processing
+## Business Logic: Four-Phase Processing
 
-The program is driven by `MAIN-PARA` which calls four paragraphs:
+The program is driven by `MAIN-PARA` which calls four paragraphs in sequence. Each phase has a distinct responsibility: open files, validate and insert records with batch commits, perform the final commit and close files, then display the summary.
 
 ```cobol
 MAIN-PARA.
@@ -86,7 +86,7 @@ Opens `INPUT-FILE` (NEW.CUSTOMER) for INPUT and `OUTPUT-FILE` (SUCCESS.LOG) for 
 
 ### Phase 2 — `PROCESS-ALL-RECORDS` (main loop)
 
-Reads `INPUT-FILE` until EOF. For each record:
+Reads `INPUT-FILE` until EOF and applies a validation cascade before each INSERT. Every record produces exactly one log line in `SUCCESS.LOG`.
 
 ```
 PROCESS-ALL-RECORDS:
@@ -140,7 +140,7 @@ INSERT-CUSTOMER:
 
 ### Phase 4 — `CLOSE-ALL-FILES` (final commit + close)
 
-If `COMMIT-COUNTER > 0`, commits remaining uncommitted inserts:
+If `COMMIT-COUNTER > 0`, commits remaining uncommitted inserts before closing files to ensure no data is lost.
 
 ```
 CLOSE-ALL-FILES:
@@ -175,6 +175,29 @@ CLOSE-ALL-FILES:
 | Other negative | Non-critical DB2 error | Write `DB2 ERROR SQLCODE: <nnn>` to log, increment `RECORDS-ERRORS`, continue |
 
 **Critical SQLCODE threshold**: `-900` is the boundary — errors more severe than `-900` (e.g., `-911`, `-913`) are considered unrecoverable and trigger immediate ROLLBACK + STOP RUN.
+
+---
+
+## Program Flow
+
+1.  **PERFORM OPEN-ALL-FILES** — opens `INDD` (INPUT) and `OUTDD` (OUTPUT); stops on non-zero FILE STATUS.
+2.  **PERFORM PROCESS-ALL-RECORDS** — main loop `UNTIL EOF` on `NEW.CUSTOMER`.
+    *   **READ INPUT-FILE** — increments `RECORDS-PROCESSED`.
+    *   **IF `INP-ID = SPACES`** → **PERFORM REPORT-ID-ERROR** — writes validation error to `SUCCESS.LOG`; skips INSERT.
+    *   **ELSE** → **PERFORM VALIDATE-EMAIL**.
+        *   **IF email invalid** → write `VALIDATION ERROR: INVALID EMAIL`; skip INSERT.
+        *   **ELSE** → **PERFORM VALIDATE-PHONE**.
+            *   **IF phone invalid** → write `VALIDATION ERROR: INVALID PHONE`; skip INSERT.
+            *   **ELSE** → **PERFORM INSERT-CUSTOMER**.
+                *   **`EXEC SQL INSERT`** — inserts record into `TB_CUSTOMERS`.
+                *   **SQLCODE = 0** → write `INSERTED OK`; increment `COMMIT-COUNTER`.
+                    *   **IF `COMMIT-COUNTER >= 100`** → `EXEC SQL COMMIT WORK`; increment `COMMIT-BATCHES`; reset counter.
+                *   **SQLCODE = -803** → write `DB2 ERROR: DUPLICATE PRIMARY KEY`; continue.
+                *   **SQLCODE < -900** → DISPLAY error; `EXEC SQL ROLLBACK WORK`; `STOP RUN`.
+                *   **Other SQLCODE** → write `DB2 ERROR SQLCODE: <nnn>`; continue.
+3.  **PERFORM CLOSE-ALL-FILES** — if `COMMIT-COUNTER > 0`, executes final `EXEC SQL COMMIT WORK`; closes `INDD` and `OUTDD`.
+4.  **PERFORM DISPLAY-SUMMARY** — prints final statistics to SYSOUT (processed, inserted, errors, commit batches).
+5.  **STOP RUN**.
 
 ---
 
