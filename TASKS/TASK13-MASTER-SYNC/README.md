@@ -50,8 +50,7 @@ Same layout as `OLD.MASTER` — `NEW-ID X(5)`, `NEW-NAME X(20)`, `NEW-BAL 9(5)V9
 
 ### Output Record Layout — `ERROR.REPORT` (`REPDD`), LRECL=80, RECFM=F
 
-Same layout as `TRANS.FILE` — `REP-ID X(5)`, `REP-ACT X(1)`, `REP-NAME X(20)`, `REP-BAL 9(5)V99`, `FILLER X(47)`.
-Each record is the raw failing transaction written as-is for manual review.
+Same layout as `TRANS.FILE` — `REP-ID X(5)`, `REP-ACT X(1)`, `REP-NAME X(20)`, `REP-BAL 9(5)V99`, `FILLER X(47)`. Each record is the raw failing transaction written as-is for manual review.
 
 ---
 
@@ -70,164 +69,102 @@ This is the core concept of the task. The algorithm processes both sorted files 
 
 ### HIGH-VALUES as EOF Sentinel
 
-When a file reaches end-of-file, its key is set to `HIGH-VALUES` (all `X'FF'` bytes — the highest possible value in EBCDIC).
-This means any real key from the other file is always **less than** `HIGH-VALUES`, so the loop naturally drains both files without special EOF handling inside `PROCESS-MERGE-LOGIC`.
-The loop exits only when **both** keys equal `HIGH-VALUES`.
+When a file reaches end-of-file, its key is set to `HIGH-VALUES` (all `X'FF'` bytes — the highest possible value in EBCDIC). This means any real key from the other file is always **less than** `HIGH-VALUES`, so the loop naturally drains both files without special EOF handling inside `PROCESS-MERGE-LOGIC`. The loop exits only when **both** keys equal `HIGH-VALUES`.
 
 ### Three-Way Key Comparison
 
-```
+```cobol
 PERFORM PROCESS-MERGE-LOGIC
-    UNTIL WS-OLD-ID = HIGH-VALUES AND WS-TRNS-ID = HIGH-VALUES
+  UNTIL WS-OLD-ID = HIGH-VALUES AND WS-TRNS-ID = HIGH-VALUES
 
 PROCESS-MERGE-LOGIC:
   EVALUATE TRUE
-    WHEN WS-TRNS-ID > WS-OLD-ID  →  Case 1: no transaction for this master record
-    WHEN WS-TRNS-ID < WS-OLD-ID  →  Case 2: orphan transaction (no master match)
-    WHEN WS-TRNS-ID = WS-OLD-ID  →  Case 3: match — apply transaction
+    WHEN WS-TRNS-ID > WS-OLD-ID  --> Case 1: no more transactions for this master record
+    WHEN WS-TRNS-ID < WS-OLD-ID  --> Case 2: orphan transaction (no master match)
+    WHEN WS-TRNS-ID = WS-OLD-ID  --> Case 3: match — apply transaction
   END-EVALUATE
 ```
 
----
+### Case 1 — TRANS-ID > MASTER-ID (no more transactions for this master record)
 
-### Case 1 — TRANS-ID > MASTER-ID (no transaction for this master record)
+**Meaning**: All transactions for `OLD-ID` are done (or there were none).
+**Action**: Write `WS-CUR-REC` to `NEW.MASTER` (unless `WS-DEL-FLAG = 'Y'`). Reset `WS-DEL-FLAG` to 'N'.
+**Read**: Read next `OLD.MASTER` record → update `WS-OLD-ID`.
 
-```
-Meaning : All transactions for OLD-ID are done (or there were none).
-Action  : Write WS-CUR-REC to NEW.MASTER (unless WS-DEL-FLAG = 'Y').
-          Reset WS-DEL-FLAG to 'N'.
-Read    : Read next OLD.MASTER record → update WS-OLD-ID.
-```
-
-This also handles the tail of OLD.MASTER after TRANS.FILE is exhausted
-(`WS-TRNS-ID = HIGH-VALUES > any real master key`).
-
----
+This also handles the tail of `OLD.MASTER` after `TRANS.FILE` is exhausted (`WS-TRNS-ID = HIGH-VALUES > any real master key`).
 
 ### Case 2 — TRANS-ID < MASTER-ID (orphan transaction)
 
-```
-Meaning : A transaction arrived for an ID that does not exist in OLD.MASTER.
-```
+**Meaning**: A transaction arrived for an ID that does not exist in `OLD.MASTER`.
 
 | Action code | Result |
 |---|---|
-| `A` (Add) | **Valid** — build new record from `TRNS-DATA` + `TRNS-AMOUNT`, write to NEW.MASTER |
-| `U` (Update) | **Error** — cannot update non-existent record; log to ERROR.REPORT |
-| `D` (Delete) | **Error** — cannot delete non-existent record; log to ERROR.REPORT |
+| `A` (Add) | **Valid** — build new record from `TRNS-DATA` + `TRNS-AMOUNT`, write to `NEW.MASTER` |
+| `U` (Update) | **Error** — cannot update non-existent record; log to `ERROR.REPORT` |
+| `D` (Delete) | **Error** — cannot delete non-existent record; log to `ERROR.REPORT` |
 
-```
-Read    : Read next TRANS.FILE record → update WS-TRNS-ID.
-          (Master cursor does NOT move — we haven't passed this master record yet.)
-```
+**Read**: Read next `TRANS.FILE` record → update `WS-TRNS-ID`. (Master cursor does NOT move.)
 
-This also handles the tail of TRANS.FILE after OLD.MASTER is exhausted
-(`WS-OLD-ID = HIGH-VALUES > any real trans key`).
-
----
+This also handles the tail of `TRANS.FILE` after `OLD.MASTER` is exhausted (`WS-OLD-ID = HIGH-VALUES > any real trans key`).
 
 ### Case 3 — TRANS-ID = MASTER-ID (match — apply transaction)
 
-```
-Meaning : Transaction targets an existing master record.
-```
+**Meaning**: Transaction targets an existing master record.
 
 | Action code | Result |
 |---|---|
 | `U` (Update) | **Valid** — `ADD TRNS-AMOUNT TO WS-CUR-BAL`. Record stays in memory, **not written yet** |
 | `D` (Delete) | **Valid** — `MOVE 'Y' TO WS-DEL-FLAG`. Record will be skipped when written |
-| `A` (Add) | **Error** — duplicate add on existing ID; log to ERROR.REPORT |
+| `A` (Add) | **Error** — duplicate add on existing ID; log to `ERROR.REPORT` |
 
-> **Why not write immediately on Update?**
-> The next transaction may also target the same ID (e.g., a second `U`, or a `D`).
-> The record stays in `WS-CUR-REC` until `TRANS-ID > MASTER-ID` (Case 1) triggers the write.
+> **Why not write immediately on Update?** The next transaction may also target the same ID (e.g., a second `U`, or a `D`). The record stays in `WS-CUR-REC` until `TRANS-ID > MASTER-ID` (Case 1) triggers the write.
 
-```
-Read    : Read next TRANS.FILE record → update WS-TRNS-ID.
-          (Master cursor does NOT move — more transactions for this ID may follow.)
-```
+**Read**: Read next `TRANS.FILE` record → update `WS-TRNS-ID`. (Master cursor does NOT move.)
 
 ---
 
-### Multiple Transactions for the Same ID
+## Program Flow
 
-> **Note:** Multiple transactions for the same ID are supported in a single run (e.g., two `U` updates, or `U` followed by `D`). They are applied sequentially in the order they appear in `TRANS.FILE` before the master record is written or skipped.
-
-Example — ID `00800` has two `U` transactions in the test data:
-```
-00800U  0001000   → WS-CUR-BAL = 0003000 + 100.00 = 0004000 (00040.00)
-00800U  0002000   → WS-CUR-BAL = 0004000 + 200.00 = 0006000 (00060.00)
-```
-The master record for `00800` is only written once, after both updates are accumulated.
-
-If `WS-DEL-FLAG = 'Y'` and another transaction arrives for the same ID, it is logged as an error — you cannot update or re-delete an already-deleted record within the same run.
-
----
-
-### Full Algorithm Flowchart
-
-```
-OPEN all files
-READ first OLD.MASTER  → WS-OLD-ID  (HIGH-VALUES if empty)
-READ first TRANS.FILE  → WS-TRNS-ID (HIGH-VALUES if empty)
-
-PERFORM UNTIL WS-OLD-ID = HIGH-VALUES AND WS-TRNS-ID = HIGH-VALUES
-  │
-  ├─ TRNS-ID > OLD-ID  ──────────────────────────────── Case 1
-  │    PERFORM WRITE-NEW-MASTER-REC                      (writes if DEL-FLAG='N')
-  │    PERFORM READ-OLD-MASTER                           → advance master cursor
-  │
-  ├─ TRNS-ID < OLD-ID  ──────────────────────────────── Case 2
-  │    IF TRNS-ACT = 'A'
-  │       write new record to NEW.MASTER
-  │    ELSE
-  │       PERFORM LOG-ERROR-TRANSACTION
-  │    PERFORM READ-TRANSACTION                          → advance trans cursor
-  │
-  └─ TRNS-ID = OLD-ID  ──────────────────────────────── Case 3
-       IF DEL-FLAG = 'Y'
-          PERFORM LOG-ERROR-TRANSACTION                  (post-delete trans = error)
-       ELSE
-          IF TRNS-ACT = 'U' → ADD TRNS-AMOUNT TO WS-CUR-BAL
-          IF TRNS-ACT = 'D' → MOVE 'Y' TO WS-DEL-FLAG
-          IF TRNS-ACT = 'A' → PERFORM LOG-ERROR-TRANSACTION (duplicate)
-       PERFORM READ-TRANSACTION                          → advance trans cursor only
-
-CLOSE all files
-DISPLAY-SUMMARY to SYSOUT
-STOP RUN
-```
+1.  **PERFORM OPEN-ALL-FILES** — opens `OLDDD` (INPUT), `TRNSDD` (INPUT), `NEWDD` (OUTPUT), and `REPDD` (OUTPUT). If any status is not `'00'`, displays an error and stops the run.
+2.  **PERFORM READ-OLD-MASTER** — reads the first record from `OLDDD` into `WS-CUR-REC` and sets `WS-OLD-ID`. If the file is empty, sets `WS-OLD-ID` to `HIGH-VALUES`.
+3.  **PERFORM READ-TRANSACTION** — reads the first record from `TRNSDD` and sets `WS-TRNS-ID`. If empty, sets to `HIGH-VALUES`.
+4.  **PERFORM PROCESS-MERGE-LOGIC** — the main loop that continues until both `WS-OLD-ID` and `WS-TRNS-ID` reach `HIGH-VALUES`.
+    *   **Case 1 (TRNS > OLD):** Finalizes the current master record. Calls `WRITE-NEW-MASTER-REC` (which skips if `WS-DEL-FLAG = 'Y'`), resets flags, and reads the next `OLD.MASTER`.
+    *   **Case 2 (TRNS < OLD):** Handles orphan transactions. If action is `A`, writes a new record directly; otherwise, logs an error. Reads the next `TRANS.FILE`.
+    *   **Case 3 (TRNS = OLD):** Updates the record in memory. If action is `U`, adds the amount to the balance; if `D`, marks for deletion. Reads the next `TRANS.FILE`.
+5.  **DISPLAY-SUMMARY** — prints final statistics to SYSOUT (records read, added, updated, deleted, and errors).
+6.  **PERFORM CLOSE-ALL-FILES** — closes all four datasets and stops the program.
 
 ---
 
 ## Test Data
 
-All input and expected output files are in the [`DATA/`](DATA/) folder.
+All input and expected output files are in the [`DATA/`](./DATA) folder.
 
 | File | Description |
 |---|---|
-| [`DATA/OLD.MASTER`](DATA/OLD.MASTER) | 7 test customer records (pre-sorted by ID) |
-| [`DATA/TRANS.FILE`](DATA/TRANS.FILE) | 15 daily transactions (pre-sorted by ID) |
-| [`DATA/NEW.MASTER`](DATA/NEW.MASTER) | Expected updated master output — 9 records |
-| [`DATA/ERROR.REPORT`](DATA/ERROR.REPORT) | Expected error log — 3 failed transactions |
+| [`DATA/OLD.MASTER`](./DATA/OLD.MASTER) | 7 test customer records (pre-sorted by ID) |
+| [`DATA/TRANS.FILE`](./DATA/TRANS.FILE) | 15 daily transactions (pre-sorted by ID) |
+| [`DATA/NEW.MASTER`](./DATA/NEW.MASTER) | Expected updated master output — 9 records |
+| [`DATA/ERROR.REPORT`](./DATA/ERROR.REPORT) | Expected error log — 3 failed transactions |
 
 ---
 
 ## Expected SYSOUT
 
-Actual job output is stored in [`OUTPUT/SYSOUT.txt`](OUTPUT/SYSOUT.txt).
+Actual job output is stored in [`OUTPUT/SYSOUT.txt`](./OUTPUT/SYSOUT.txt).
 
-```
+```text
 ========================================
-MASTER FILE UPDATE SUMMARY
+ MASTER FILE UPDATE SUMMARY
 ========================================
-OLD MASTER RECORDS READ:      7
-TRANSACTIONS PROCESSED:      15
-NEW MASTER RECORDS:           9
-ADDED:                        4
-UPDATED:                      5
-DELETED:                      2
-ERRORS LOGGED:                3
+ OLD MASTER RECORDS READ:       7
+ TRANSACTIONS PROCESSED:       15
+ NEW MASTER RECORDS:            9
+   ADDED:                       4
+   UPDATED:                     5
+   DELETED:                     2
+ ERRORS LOGGED:                 3
 ========================================
 ```
 
@@ -235,16 +172,25 @@ ERRORS LOGGED:                3
 
 ## How to Run
 
-1. Upload [`DATA/OLD.MASTER`](DATA/OLD.MASTER) and [`DATA/TRANS.FILE`](DATA/TRANS.FILE) to your mainframe datasets manually through option '3.4 and edit your dataset' or with pre-prepared data
-2. Submit [`JCL/COMPRUN.jcl`](JCL/COMPRUN.jcl) with pre-prepared data
+1.  Upload [`DATA/OLD.MASTER`](./DATA/OLD.MASTER) and [`DATA/TRANS.FILE`](./DATA/TRANS.FILE) to your mainframe datasets.
+2.  Submit [`JCL/COMPRUN.jcl`](./JCL/COMPRUN.jcl).
 
-> **PROC reference:** `COMPRUN.jcl` uses the [`MYCOMPGO`](../../JCLPROC/MYCOMPGO.jcl) catalogued procedure for compilation and execution. Make sure `MYCOMPGO` is available in your system's `PROCLIB` before submitting.
+> **PROC reference:** `COMPRUN.jcl` uses the [`MYCOMPGO`](../../JCLPROC/MYCOMPGO.jcl) catalogued procedure.
 
 ---
 
 ## Key COBOL Concepts Used
 
-- **Match-Merge (Balance Line) algorithm** — the central pattern of this task; two sorted sequential files are processed in a single loop with two independent read cursors; on each iteration exactly one cursor advances depending on the key comparison result
-- **`HIGH-VALUES` as EOF sentinel** — when a file is exhausted its key is set to `HIGH-VALUES` (`X'FF...'`); because no real key can exceed it, the remaining records of the other file drain naturally without any extra EOF branching inside the loop
-- **Deferred write pattern** — on a match (`=` case) the master record is never written immediately; it stays in `WS-CUR-REC` so that subsequent transactions for the same ID keep accumulating; the write fires only when the trans cursor finally moves past this master ID (Case 1)
-- **`WS-DEL-FLAG` with post-delete guard** — a `'Y'`/`'N'` flag that suppresses the write for a deleted record; if another transaction arrives for the same ID while the flag is `'Y'`, it is rejected as an error — preventing updates or re-deletes on an already-removed record within the same run
+*   **Match-Merge (Balance Line) algorithm** — processing two sorted sequential files in a single loop with two independent read cursors.
+*   **`HIGH-VALUES` as EOF sentinel** — simplifies loop termination and logic.
+*   **Deferred write pattern** — accumulating updates in memory (`WS-CUR-REC`) until all transactions for a key are processed.
+*   **`WS-DEL-FLAG` with post-delete guard** — prevents updates or re-deletes on already-removed records.
+
+---
+
+## Notes
+
+*   **EBCDIC HIGH-VALUES:** The use of `X'FF'` as an EOF sentinel is a standard mainframe pattern. It ensures the exhausted file always \"loses\" the comparison, allowing the remaining file to be drained naturally by the same loop logic.
+*   **Sequential Sync Pattern:** This is the most efficient way to synchronize two large sequential files without using a database. It only requires one pass through each file.
+*   **Transaction Integrity:** Multiple updates to the same record are accumulated correctly in `WS-CUR-REC`. The record is only written to the new master file once the transaction key moves to a higher value.
+*   **Error Reporting:** Any invalid transaction (e.g., updating a non-existent record or adding an existing one) is preserved in its raw format in the `ERROR.REPORT` file for manual review.
