@@ -103,48 +103,15 @@ All input and output files are in the [`DATA/`](DATA/) folder.
 | [`DATA/SALES.DATA`](DATA/SALES.DATA) | 7 employee sales records (input) |
 | [`DATA/COMM.PAYOUT`](DATA/COMM.PAYOUT) | Commission payout report (output) |
 
-Sample input records:
-
-```
-00100NY15000000
-00200CA05000000
-00300TX00500000
-00400FL00800000
-00500NY00050000
-00600CA00090000
-00700TX01200000
-```
-
----
-
-## Expected SYSOUT
-
-```
-RECORDS PROCESSED: 7
-```
-
-Expected output in `COMM.PAYOUT`:
-
-```
-00100 COMMISSION: 10500.00, TAX: 2625.00, NET: 7875.00
-00200 COMMISSION:  4000.00, TAX:  800.00, NET: 3200.00
-00300 COMMISSION:   150.00, TAX:   22.50, NET:  127.50
-00400 COMMISSION:   320.00, TAX:   48.00, NET:  272.00
-00500 COMMISSION:    25.00, TAX:    3.75, NET:   21.25
-00600 COMMISSION:    63.00, TAX:    9.45, NET:   53.55
-00700 COMMISSION:   360.00, TAX:   54.00, NET:  306.00
-```
-
 ---
 
 ## How to Run
 
-1. Verify dataset name prefix in [`JCL/COMPRUN.jcl`](JCL/COMPRUN.jcl) matches your environment (e.g. `Z73460.TASK22.*`).
-2. Submit `JCL/COMPRUN.jcl`. The job will:
+1. Submit [`JCL/COMPRUN.jcl`](JCL/COMPRUN.jcl). The job will:
    - Delete previous datasets (`STEP005`).
    - Populate `SALES.DATA` via `IEBGENER` (`STEP010`).
    - Compile all three COBOL programs, link them into one load module, and run (`STEP015`).
-3. Check `Z73460.TASK22.COMM.PAYOUT` for the payout report.
+2. Check `Z73460.TASK22.COMM.PAYOUT` for the payout report.
 
 ---
 
