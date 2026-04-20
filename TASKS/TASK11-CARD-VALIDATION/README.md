@@ -2,9 +2,9 @@
 
 ## Overview
 
-Reads a sequential PS transactions file (`TRANS.DAILY`), performs a **random read** into a VSAM KSDS card master (`CARD.MASTER`) for each transaction, and runs three consecutive validation checks:
+Reads a sequential PS transactions file [`TRANS.DAILY`](DATA/TRANS.DAILY), performs a **random read** into a VSAM KSDS card master [`CARD.MASTER`](DATA/CARD.MASTER) for each transaction, and runs three consecutive validation checks:
 **existence → status → expiry date**.
-Transactions that pass all checks are written to `APPROVED.FILE`; any failure routes the transaction to `DECLINED.FILE` with a reason code (`NOT FOUND`, `BLOCKED`, or `EXPIRED`).
+Transactions that pass all checks are written to [`APPROVED.FILE`](DATA/APPROVED.FILE); any failure routes the transaction to [`DECLINED.FILE`](DATA/DECLINED.FILE) with a reason code (`NOT FOUND`, `BLOCKED`, or `EXPIRED`).
 The program obtains the current date from the operating system at startup — no hardcoded dates.
 
 ---
