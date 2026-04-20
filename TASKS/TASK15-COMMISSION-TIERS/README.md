@@ -20,25 +20,25 @@ The lookup algorithm selects the **first tier where `WS-LIMIT >= SAL-AMT`**. If 
 
 | DD Name | File | Org | Mode | Description |
 |---|---|---|---|---|
-| `COMMDD` | `COMM.TIERS` | PS | INPUT | Commission tiers table — salary limit + commission rate; loaded into memory at startup |
-| `SALDD` | `SALES.WEEKLY` | PS | INPUT | Employee salary records — ID and weekly sales amount |
-| `OUTDD` | `PAYOUT.RPT` | PS | OUTPUT | Commission results — one line per employee with salary, rate, and commission amount |
+| `COMMDD` | [`COMM.TIERS`](./DATA/COMM.TIERS) | PS | INPUT | Commission tiers table — salary limit + commission rate; loaded into memory at startup |
+| `SALDD` | [`SALES.WEEKLY`](./DATA/SALES.WEEKLY) | PS | INPUT | Employee salary records — ID and weekly sales amount |
+| `OUTDD` | [`PAYOUT.RPT`](./DATA/PAYOUT.RPT) | PS | OUTPUT | Commission results — one line per employee with salary, rate, and commission amount |
 
-### Input Record Layout — `COMM.TIERS` (`COMMDD`), LRECL=9, RECFM=F
+### Input Record Layout — (`COMMDD`), LRECL=9, RECFM=F
 
 | Field | Picture | Offset | Description |
 |---|---|---|---|
 | `COMM-LIMIT` | `9(6)` | 1 | Salary upper bound for this tier |
 | `COMM-PCT` | `V999` | 7 | Commission rate — implied 3 decimal places (e.g. `020` = 0.020 = 2%) |
 
-### Input Record Layout — `SALES.WEEKLY` (`SALDD`), LRECL=13, RECFM=F
+### Input Record Layout — (`SALDD`), LRECL=13, RECFM=F
 
 | Field | Picture | Offset | Description |
 |---|---|---|---|
 | `SAL-ID` | `9(5)` | 1 | Employee ID |
 | `SAL-AMT` | `9(6)V99` | 6 | Weekly sales amount — implied 2 decimal places |
 
-### Output Record Layout — `PAYOUT.RPT` (`OUTDD`), LRECL=80, RECFM=F
+### Output Record Layout — (`OUTDD`), LRECL=80, RECFM=F
 
 | Field | Picture | Offset | Description |
 |---|---|---|---|
@@ -130,7 +130,7 @@ All input and expected output files are in the [`DATA/`](./DATA) folder.
 
 ## Expected SYSOUT
 
-Actual job output is stored in [`OUTPUT/SYSOUT.txt`](./OUTPUT/SYSOUT.txt).
+Actual job output is stored in [`SYSOUT.txt`](./OUTPUT/SYSOUT.txt).
 
 ```text
 ========================================
@@ -148,8 +148,9 @@ Actual job output is stored in [`OUTPUT/SYSOUT.txt`](./OUTPUT/SYSOUT.txt).
 
 ## How to Run
 
-1.  Upload [`DATA/COMM.TIERS`](./DATA/COMM.TIERS) and [`DATA/SALES.WEEKLY`](./DATA/SALES.WEEKLY) to your mainframe datasets.
-2.  Submit [`JCL/COMPRUN.jcl`](./JCL/COMPRUN.jcl).
+1.  Upload [`COMM.TIERS`](./DATA/COMM.TIERS) and [`SALES.WEEKLY`](./DATA/SALES.WEEKLY) to your mainframe datasets.
+2.  Submit [`COMPRUN.jcl`](./JCL/COMPRUN.jcl).
+3.  Compare output files and sysout - see [`PAYOUT.RPT`](./DATA/PAYOUT.RPT) and [`SYSOUT.txt`](OUTPUT/SYSOUT.txt)
 
 ---
 
