@@ -3,9 +3,11 @@
 ## Overview
 
 Reads a commission tiers reference file (`COMM.TIERS`) into an in-memory array (`TIER-TABLE`), then processes an employee salary file (`SALES.WEEKLY`) and writes a commission output (`PAYOUT.RPT`) with the calculated commission for each employee.
-The core technique is a **Tiered Table Lookup**: instead of a simple key match, the program finds the first tier where `WS-LIMIT >= SAL-AMT` — the salary bracket determines the commission rate. The tier table is loaded once into memory before any salary record is processed.
+The core technique is a **Tiered Table Lookup**: instead of a simple key match, the program finds the first tier where `WS-LIMIT >= SAL-AMT` — the salary bracket determines the commission rate.
+The tier table is loaded once into memory before any salary record is processed.
 
 ---
+
 ## Critical Prerequisite: `COMM.TIERS` Must Be Sorted by `COMM-LIMIT` Ascending
 
 > **`COMM.TIERS` must be sorted by `COMM-LIMIT` in ascending order before this program runs.**
@@ -13,7 +15,6 @@ The core technique is a **Tiered Table Lookup**: instead of a simple key match, 
 The lookup algorithm selects the **first tier where `WS-LIMIT >= SAL-AMT`**. If the tiers are unsorted, a lower limit may match a salary that should fall into a higher tier — producing an incorrect commission rate **without any error message or ABEND**. Use a `SORT` step in the JCL before the program step if your input is not already sorted.
 
 ---
-
 
 ## Files
 
@@ -52,100 +53,94 @@ The lookup algorithm selects the **first tier where `WS-LIMIT >= SAL-AMT`**. If 
 
 ---
 
-## Two-Phase Processing
+## Business Logic: Two-Phase Processing
 
 ### Phase 1 — Load Commission Table (Initialization)
 
-```
+The program loads the entire tiers file into a Working-Storage table.
+
+```cobol
 OPEN COMM.TIERS
 PERFORM UNTIL EOF
-    READ COMM.TIERS
-    ADD 1 TO TIERS-LOADED
-    MOVE COMM-LIMIT TO WS-LIMIT(IDX)
-    MOVE COMM-PCT   TO WS-PCT(IDX)
+  READ COMM.TIERS
+  ADD 1 TO TIERS-LOADED
+  MOVE COMM-LIMIT TO WS-LIMIT(IDX)
+  MOVE COMM-PCT TO WS-PCT(IDX)
 END-PERFORM
 CLOSE COMM.TIERS
 ```
 
-After this phase the entire tier table lives in `TIER-TABLE` in memory. `TIERS-LOADED` holds the number of loaded entries and is used as the upper bound for all subsequent lookups. Table size is bounded by `OCCURS 20 TIMES` — if `COMM.TIERS` has more than 20 records the program displays a warning and ignores the excess.
+After this phase, the `TIER-TABLE` lives in memory. `TIERS-LOADED` holds the entry count. The table is bounded by `OCCURS 20 TIMES`.
 
-### Phase 2 — Process Salary File
+### Phase 2 — Process Salary File (Tiered Lookup)
 
-```
+For each salary record, the program finds the correct bracket.
+
+```cobol
 OPEN SALES.WEEKLY, PAYOUT.RPT
 PERFORM UNTIL EOF
-    READ SALES.WEEKLY
-    ADD 1 TO EMPLOYEES-PROCESSED
-    PERFORM CALCULATE-COMMISSION
+  READ SALES.WEEKLY
+  PERFORM CALCULATE-COMMISSION
 END-PERFORM
 CLOSE SALES.WEEKLY, PAYOUT.RPT
 ```
 
----
-
-## Tiered Lookup Logic
-
-The lookup searches `TIER-TABLE` from index 1 to `TIERS-LOADED` looking for the **first tier where `WS-LIMIT >= SAL-AMT`**. This is the key difference from a simple key match — the salary bracket, not an exact key, selects the commission rate.
-
-### Using `PERFORM VARYING`
-
+The lookup logic within `CALCULATE-COMMISSION`:
 ```cobol
-MOVE 'N' TO WS-FOUND
-PERFORM VARYING IDX FROM 1 BY 1
-        UNTIL IDX > TIERS-LOADED OR WS-FOUND = 'Y'
-    IF WS-LIMIT(IDX) >= SAL-AMT
-        MOVE 'Y' TO WS-FOUND
-        COMPUTE OUT-RES = SAL-AMT * WS-PCT(IDX)
-        MOVE SAL-ID     TO OUT-ID
-        MOVE SAL-AMT    TO OUT-SAL-AMT
-        MOVE WS-PCT(IDX) TO OUT-PCT
-        WRITE COMMISSION-REC
-        ADD 1 TO TIER-MATCH-COUNT
-    END-IF
+PERFORM VARYING IDX FROM 1 BY 1 
+  UNTIL IDX > TIERS-LOADED OR WS-FOUND = 'Y'
+  IF WS-LIMIT(IDX) >= SAL-AMT
+    MOVE 'Y' TO WS-FOUND
+    COMPUTE OUT-RES = SAL-AMT * WS-PCT(IDX)
+    ...
+  END-IF
 END-PERFORM
 ```
 
-### No Tier Match
-
-If no tier satisfies `WS-LIMIT >= SAL-AMT` (salary exceeds all defined limits), the record is **not written** to output and `NO-TIER-MATCH` counter is incremented. This means the `COMM.TIERS` file should always include a catch-all top tier (e.g. `999999` limit) to cover the highest possible salary.
-
 ---
 
-## Commission Calculation
+## Program Flow
 
-```
-OUT-RES = SAL-AMT x WS-PCT(IDX)   (tier where WS-LIMIT >= SAL-AMT)
-```
-
-`COMPUTE` is used to avoid truncation on the implied decimal positions.
+1.  **PERFORM OPEN-COMM-FILE** — opens `COMMDD` (INPUT) for initialization.
+2.  **PERFORM LOAD-COMM-TABLE** — reads `COMM.TIERS` into `WS-TIER-TABLE` until EOF. Increments `TIERS-LOADED`.
+3.  **PERFORM CLOSE-COMM-FILE** — closes `COMMDD`.
+4.  **PERFORM OPEN-SALES-FILES** — opens `SALDD` (INPUT) and `OUTDD` (OUTPUT).
+5.  **PERFORM PROCESS-SALES-RECORDS** — main loop `UNTIL EOF` on `SALES.WEEKLY`.
+    *   **READ SALES-FILE**.
+    *   **PERFORM LOOKUP-TIER** — linear search in `WS-TIER-TABLE` using `WS-LIMIT(IDX) >= SAL-AMT`.
+    *   **IF FOUND** --> `COMPUTE OUT-RES`, format output line, and **WRITE COMMISSION-REC**.
+    *   **IF NOT FOUND** --> Increment `NO-TIER-MATCH` (record skipped).
+6.  **DISPLAY-SUMMARY** — prints final statistics to SYSOUT (tiers loaded, employees processed, matches vs. no-matches).
+7.  **PERFORM CLOSE-SALES-FILES** — closes `SALDD` and `OUTDD`.
+8.  **STOP RUN**.
 
 ---
 
 ## Test Data
 
-All input and expected output files are in the [`DATA/`](DATA/) folder.
+All input and expected output files are in the [`DATA/`](./DATA) folder.
 
 | File | Description |
 |---|---|
-| [`DATA/COMM.TIERS`](DATA/COMM.TIERS) | 5 commission tier entries |
-| [`DATA/SALES.WEEKLY`](DATA/SALES.WEEKLY) | 12 employee salary records |
-| [`DATA/PAYOUT.RPT`](DATA/PAYOUT.RPT) | Expected commission output |
+| [`DATA/COMM.TIERS`](./DATA/COMM.TIERS) | 5 commission tier entries |
+| [`DATA/SALES.WEEKLY`](./DATA/SALES.WEEKLY) | 12 employee salary records |
+| [`DATA/PAYOUT.RPT`](./DATA/PAYOUT.RPT) | Expected commission output |
 
 ---
 
 ## Expected SYSOUT
 
-Actual job output is stored in [`OUTPUT/SYSOUT.txt`](OUTPUT/SYSOUT.txt).
+Actual job output is stored in [`OUTPUT/SYSOUT.txt`](./OUTPUT/SYSOUT.txt).
 
-```
+```text
 ========================================
-COMMISSION CALCULATION SUMMARY
+ COMMISSION CALCULATION SUMMARY
 ========================================
-COMMISSION TIERS LOADED:  5
-EMPLOYEES PROCESSED:     12
-RECORDS WRITTEN:         12
-TIER MATCHED:            12
-NO TIER MATCH:            0
+ COMMISSION TIERS LOADED:       5
+ EMPLOYEES PROCESSED:          12
+ RECORDS WRITTEN:              12
+ TIER MATCHED:                 12
+ NO TIER MATCH:                 0
 ========================================
 ```
 
@@ -153,25 +148,23 @@ NO TIER MATCH:            0
 
 ## How to Run
 
-1. Upload [`DATA/COMM.TIERS`](DATA/COMM.TIERS) and [`DATA/SALES.WEEKLY`](DATA/SALES.WEEKLY) to your mainframe datasets manually through option '3.4 and edit your dataset' or with pre-prepared data
-2. Submit [`JCL/COMPRUN.jcl`](JCL/COMPRUN.jcl) with pre-prepared data
-
-> **PROC reference:** `COMPRUN.jcl` uses the [`MYCOMPGO`](../../JCLPROC/MYCOMPGO.jcl) catalogued procedure for compilation and execution. Make sure `MYCOMPGO` is available in your system's `PROCLIB` before submitting.
+1.  Upload [`DATA/COMM.TIERS`](./DATA/COMM.TIERS) and [`DATA/SALES.WEEKLY`](./DATA/SALES.WEEKLY) to your mainframe datasets.
+2.  Submit [`JCL/COMPRUN.jcl`](./JCL/COMPRUN.jcl).
 
 ---
 
 ## Key COBOL Concepts Used
 
-- **`OCCURS` + `INDEXED BY`** — defines `TIER-TABLE` as a fixed-size array (`OCCURS 20 TIMES`) of limit/rate pairs loaded entirely into working-storage before any salary record is processed
-- **Tiered (bracket) lookup** — unlike a simple key match, the search finds the first entry where `WS-LIMIT >= SAL-AMT`; the tiers must be stored in ascending order of `COMM-LIMIT` for the algorithm to work correctly
-- **Two-phase design** — strict initialization phase (load `TIER-TABLE`, close `COMM.TIERS`) before opening `SALES.WEEKLY`; `COMM.TIERS` is read exactly once regardless of how many salary records exist
-- **No-match handling** — when no tier covers the employee salary the record is silently skipped and `NO-TIER-MATCH` is incremented; ensure a catch-all top tier exists in `COMM.TIERS`
+*   **`OCCURS` + `INDEXED BY`** — defining a Working-Storage table for tiered data.
+*   **Tiered (Bracket) Lookup** — using `>=` comparison in a linear search to find the correct range.
+*   **Two-phase processing** — loading reference data into memory once to avoid repeated file I/O.
+*   **Linear Search via `PERFORM VARYING`** — iterating through the table until the first condition match.
 
 ---
 
 ## Notes
 
-- Tiers in `COMM.TIERS` must be sorted in **ascending order** of `COMM-LIMIT` — the first tier where the limit is greater than or equal to the salary amount is used; unsorted tiers will produce incorrect commission assignments
-- The table size is bounded by the `OCCURS` limit in working-storage (`OCCURS 20 TIMES`) — if `COMM.TIERS` has more than 20 records the program displays a warning and skips the excess; increase the `OCCURS` value if a larger table is needed
-- `COMM.TIERS` is closed after Phase 1 and never reopened — all lookups in Phase 2 are purely in-memory
-- Tested on IBM z/OS with Enterprise COBOL
+*   **Sort Order Importance:** The tiers **must** be sorted ascending by limit. If they are out of order, a salary of 5000 might match a "10000" limit tier before it reaches a "5000" limit tier, leading to wrong calculations.
+*   **Catch-all Tier:** It is a best practice to have a final tier with a very high limit (e.g., 999999) to ensure all possible salaries are covered.
+*   **Memory Efficiency:** Like TASK14, this is highly efficient for small tables (up to 20-50 entries). For significantly larger tables, a binary search or VSAM would be preferred.
+*   **Precision:** `COMPUTE` ensures that the implied decimal positions in the sales amount and commission rate are handled correctly during multiplication.
