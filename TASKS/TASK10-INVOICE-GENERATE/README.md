@@ -11,9 +11,9 @@ Orders with unknown product IDs are skipped and logged to SYSOUT. A summary is p
 
 | DD Name | File | Org | Mode | Description |
 |---|---|---|---|---|
-| `VSAMDD` | `PROD.MASTER` | VSAM KSDS | INPUT / RANDOM | Product master — name and unit price, key = `PRODUCT-ID` |
-| `ORDD` | `ORDERS.DAILY` | PS | INPUT | Daily orders — order ID, product ID, quantity; LRECL=80, RECFM=F |
-| `OUTDD` | `INVOICE.FILE` | PS | OUTPUT | Enriched invoice lines — order ID, product name, quantity, total cost; LRECL=80, RECFM=F |
+| `VSAMDD` | [`PROD.MASTER`](DATA/PROD.MASTER.VSAM) | VSAM KSDS | INPUT / RANDOM | Product master — name and unit price, key = `PRODUCT-ID` |
+| `ORDD` | [`ORDERS.DAILY`](DATA/ORDERS.DAILY) | PS | INPUT | Daily orders — order ID, product ID, quantity; LRECL=80, RECFM=F |
+| `OUTDD` | [`INVOICE.FILE`](DATA/INVOICE.FILE) | PS | OUTPUT | Enriched invoice lines — order ID, product name, quantity, total cost; LRECL=80, RECFM=F |
 
 ### VSAM Record Layout (`VSAMDD`) — LRECL=32
 
@@ -119,7 +119,7 @@ Input data and expected output are stored in the [`DATA/`](DATA/) folder:
 
 ## Expected SYSOUT
 
-Actual job output is stored in [`OUTPUT/SYSOUT.txt`](OUTPUT/SYSOUT.txt).
+Actual job output is stored in [`SYSOUT.txt`](OUTPUT/SYSOUT.txt).
 
 ```
 ORDER 10006: PRODUCT 99999 NOT FOUND.
@@ -137,12 +137,12 @@ TOTAL ERRORS:               2
 
 ## How to Run
 
-1. **Define VSAM cluster** — run [`JCL/DEFKSDS.jcl`](JCL/DEFKSDS.jcl)
-2. **Load initial master data** — load [`DATA/PROD.MASTER.VSAM`](DATA/PROD.MASTER.VSAM) into the KSDS cluster either via REPRO (see [`DATAVSAM.jcl`](../../JCL%20SAMPLES/DATAVSAM.jcl)) or manually through **File Manager** in ISPF
-3. **Compile and run** — run [`JCL/COMPRUN.jcl`](JCL/COMPRUN.jcl)
+1. **Define VSAM cluster** — run [`DEFKSDS.jcl`](JCL/DEFKSDS.jcl)
+2. **Load initial master data** — load [`PROD.MASTER.VSAM`](DATA/PROD.MASTER.VSAM) into the KSDS cluster either via REPRO (see [`DATAVSAM.jcl`](../../JCL%20SAMPLES/DATAVSAM.jcl)) or manually through **File Manager** in ISPF
+3. **Compile and run** — run [`COMPRUN.jcl`](JCL/COMPRUN.jcl)
 4. **Compare output files and sysout** - see [`INVOICE.FILE`](DATA/INVOICE.FILE) and [`SYSOUT.txt`](OUTPUT/SYSOUT.txt)
 
-> **PROC reference:** [`JCL/COMPRUN.jcl`](JCL/COMPRUN.jcl) uses the [`MYCOMPGO`](../../JCLPROC/MYCOMPGO.jcl) catalogued procedure for compilation and execution. Make sure [`MYCOMPGO`](../../JCLPROC/MYCOMPGO.jcl) is available in your system's `PROCLIB` before submitting.
+> **PROC reference:** [`COMPRUN.jcl`](JCL/COMPRUN.jcl) uses the [`MYCOMPGO`](../../JCLPROC/MYCOMPGO.jcl) catalogued procedure for compilation and execution. Make sure [`MYCOMPGO`](../../JCLPROC/MYCOMPGO.jcl) is available in your system's `PROCLIB` before submitting.
 
 ---
 
