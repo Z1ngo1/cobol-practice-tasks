@@ -55,24 +55,24 @@ CREATE TABLE TB_ORDERS (
 
 | DD Name | File | Org | Mode | Description |
 |---|---|---|---|---|
-| `ORDIN` | `ORDERS.FILE` | PS | INPUT | Sequential order input, RECFM=F, LRECL=80 |
-| `ORDLOG` | `ORDER.LOG` | PS | OUTPUT | Order load log with error and success messages |
+| `ORDIN` | [`ORDERS.FILE`](DATA/ORDERS.FILE) | PS | INPUT | Sequential order input, RECFM=F, LRECL=80 |
+| `ORDLOG` | [`ORDER.LOG`](DATA/ORDER.LOG) | PS | OUTPUT | Order load log with error and success messages |
 
-### Input Record Layout — `ORDERS.FILE` (`ORDIN`), LRECL=80, RECFM=F
+### Input Record Layout — (`ORDIN`), LRECL=80, RECFM=F
 
 | Field | Position | Format | Description |
 |---|---|---|---|
-| `ORDER-ID` | 1–6 | `X(6)` | Unique Order Identifier (must not be spaces) |
-| `ORDER-DATE` | 7–14 | `9(8)` | Date in `YYYYMMDD` format (month 01–12) |
-| `PROD-ID` | 15–19 | `X(5)` | Product Identifier (foreign key to `TB_PRODUCTS`) |
-| `QUANTITY` | 20–23 | `9(4)` | Order Quantity (> 0) |
+| `IN-ORDER-ID` | 1–6 | `X(6)` | Unique Order Identifier (must not be spaces) |
+| `IN-ORDER-DATE` | 7–14 | `9(8)` | Date in `YYYYMMDD` format (month 01–12) |
+| `IN-PROD-ID` | 15–19 | `X(5)` | Product Identifier (foreign key to `TB_PRODUCTS`) |
+| `IN-QUANTITY` | 20–23 | `9(4)` | Order Quantity (> 0) |
 | `FILLER` | 24–80 | `X(57)` | Reserved |
 
-### Output Record Layout — `ORDER.LOG` (`ORDLOG`)
+### Output Record Layout — (`ORDLOG`)
 
 | Field | Picture | Description |
 |---|---|---|
-| `LOG-REC` | `X(120)` | One log line per input record with order id, product id, and status message |
+| `LOG-REC` | `X(80)` | One log line per input record with order id, product id, and status message |
 
 Typical status messages include:
 - `INSERTED (VALID ORDER)` — successful insert into `TB_ORDERS`
@@ -90,9 +90,9 @@ Typical status messages include:
 The program applies a multi-stage pipeline to each order record: field validation, duplicate detection, master lookup, insert, and batch commit.
 
 1. **Field Validation**
-   - Check `ORDER-ID` is not spaces.
-   - Check `ORDER-DATE` is 8 digits with month between `01` and `12`.
-   - Check `QUANTITY` is numeric and greater than zero.
+   - Check `IN-ORDER-ID` is not spaces.
+   - Check `IN-ORDER-DATE` is 8 digits with month between `01` and `12`.
+   - Check `IN-QUANTITY` is numeric and greater than zero.
 
 2. **Referential Integrity (Foreign Key Validation)**
    - Before insert, perform a `SELECT` on `TB_PRODUCTS` using `PROD-ID`.
@@ -117,10 +117,10 @@ The program applies a multi-stage pipeline to each order record: field validatio
 
 2. **Main Processing Loop**
    - Read next record from `ORDERS.FILE`.
-   - Perform field validation on `ORDER-ID`, `ORDER-DATE`, and `QUANTITY`.
-   - Check in-memory duplicate array for `ORDER-ID`.
+   - Perform field validation on `IN-ORDER-ID`, `IN-ORDER-DATE`, and `IN-QUANTITY`.
+   - Check in-memory duplicate array for `IN-ORDER-ID`.
    - Perform DB2 `SELECT` on `TB_PRODUCTS` with `PROD-ID` to verify parent exists.
-   - If all checks pass, convert `ORDER-DATE` from `YYYYMMDD` to `YYYY-MM-DD`.
+   - If all checks pass, convert `IN-ORDER-DATE` from `YYYYMMDD` to `YYYY-MM-DD`.
    - Execute `INSERT` into `TB_ORDERS`.
    - Handle `SQLCODE`:
      - `0` — success, update counters, update in-memory array, and log success.
@@ -162,7 +162,7 @@ All sample data and resulting table images are in the [`DATA/`](DATA/) folder.
 
 ## Expected SYSOUT
 
-Actual job output is stored in [`OUTPUT/SYSOUT.txt`](OUTPUT/SYSOUT.txt).
+Actual job output is stored in [`SYSOUT.txt`](OUTPUT/SYSOUT.txt).
 
 ```
 ----------------------------------------
@@ -181,17 +181,18 @@ COMMIT BATCHES: 1
 
 1. **Database Setup**
    - Execute the SQL scripts in the [`SQL/`](SQL/) directory to create and populate DB2 tables:
-     - [`SQL/CREATE.TB_PRODUCTS.sql`](SQL/CREATE.TB_PRODUCTS.sql)
-     - [`SQL/INSERT.TB_PRODUCTS.sql`](SQL/INSERT.TB_PRODUCTS.sql)
-     - [`SQL/CREATE.TB_ORDERS.sql`](SQL/CREATE.TB_ORDERS.sql)
+     - [`CREATE.TB_PRODUCTS.sql`](SQL/CREATE.TB_PRODUCTS.sql)
+     - [`INSERT.TB_PRODUCTS.sql`](SQL/INSERT.TB_PRODUCTS.sql)
+     - [`CREATE.TB_ORDERS.sql`](SQL/CREATE.TB_ORDERS.sql)
 
 2. **Program Execution**
-   - Submit [`JCL/COBDB2CP.jcl`](JCL/COBDB2CP.jcl).
+   - Submit [`COBDB2CP.jcl`](JCL/COBDB2CP.jcl).
    - The job will:
-     - Create the input dataset and load `ORDERS.FILE` (step `STEPINS`).
+     - Create the input dataset and load [`ORDERS.FILE`](DATA/ORDERS.FILE) (step `STEPINS`).
      - Pre-compile, compile, and link the COBOL-DB2 program (step `PREP`).
      - Run the program under `IKJEFT01` (step `RUNPROG`).
 
+3. Compare output files and sysout - see [`ORDER.LOG`](DATA/ORDER.LOG), [`TB.TB_ORDERS`](DATA/TB.TB_ORDERS) and [`SYSOUT.txt`](OUTPUT/SYSOUT.txt)
 ---
 
 ## Key COBOL + DB2 Concepts Used
