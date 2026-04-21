@@ -17,11 +17,12 @@ The core technique is **Three-Way Reconciliation**:
 ### `TB_ACCOUNTS`
 
 ```sql
-CREATE TABLE TB_ACCOUNTS (
-    ACCOUNT_ID       CHAR(6)        NOT NULL PRIMARY KEY,
-    BALANCE          DECIMAL(11,2),
-    LAST_UPDATE      DATE
-) IN DATABASE Z73460;
+CREATE TABLE TB_ACCOUNTS (       
+    ACCOUNT_ID CHAR(6) NOT NULL,  
+    BALANCE    DECIMAL (11,2),    
+    LAST_UPDATE TIMESTAMP,        
+    PRIMARY KEY (ACCOUNT_ID)      
+ ) IN DATABASE Z73460;         
 ```
 
 | Column | Type | Description |
@@ -36,11 +37,11 @@ CREATE TABLE TB_ACCOUNTS (
 
 | DD Name | File | Org | Mode | Description |
 |---|---|---|---|---|
-| `VSAMDD` | `ACCT.BACKUP` | KSDS | INPUT | Yesterday's account balances, Key pos 1–6 |
-| `TRNSDD` | `TRANS.LOG` | PS | INPUT | Today's transaction log, RECFM=F, LRECL=80 |
-| `REPDD` | `RECON.REPORT` | PS | OUTPUT | Reconciliation report, RECFM=V, LRECL=120 |
+| `VSAMDD` | [`ACCT.BACKUP`](DATA/ACCT.BACKUP) | KSDS | INPUT | Yesterday's account balances, Key pos 1–6 |
+| `TRNSDD` | [`TRANS.LOG`](DATA/TRANS.LOG) | PS | INPUT | Today's transaction log, RECFM=F, LRECL=80 |
+| `REPDD` | [`RECON.REPORT`](DATA/RECON.REPORT) | PS | OUTPUT | Reconciliation report, RECFM=V, LRECL=120 |
 
-### VSAM Record Layout — `ACCT.BACKUP` (`VSAMDD`), LRECL=80, Key=1–6
+### VSAM Record Layout — (`VSAMDD`), LRECL=80, Key=1–6
 
 | Field | Picture | Offset | Description |
 |---|---|---|---|
@@ -49,7 +50,7 @@ CREATE TABLE TB_ACCOUNTS (
 | `VSAM-BDATE` | `9(8)` | 18 | Backup date (YYYYMMDD) |
 | `FILLER` | `X(55)` | 26 | Unused |
 
-### Input Record Layout — `TRANS.LOG` (`TRNSDD`), LRECL=80, RECFM=F
+### Input Record Layout — (`TRNSDD`), LRECL=80, RECFM=F
 
 | Field | Picture | Offset | Description |
 |---|---|---|---|
@@ -58,11 +59,11 @@ CREATE TABLE TB_ACCOUNTS (
 | `TRANS-AMT` | `9(7)V99` | 8 | Transaction amount |
 | `FILLER` | `X(64)` | 17 | Unused |
 
-### Output Record Layout — `RECON.REPORT` (`REPDD`), LRECL=120, RECFM=V
+### Output Record Layout — (`REPDD`), LRECL=120, RECFM=V
 
 | Field | Picture | Description |
 |---|---|---|
-| `REPORT-LINE` | `X(116)` | One line per account or orphan entry |
+| `REPORT-LINE` | `X(120)` | One line per account or orphan entry |
 
 Report line types:
 - **Header line** — `ACCOUNT  YESTERDAY  TODAY-TRNS  EXPECTED  ACTUAL  STATUS  DIFF`
@@ -151,67 +152,29 @@ All input, VSAM image, and output files are in the [`DATA/`](DATA/) folder.
 
 | File | Description |
 |---|---|
-| [`DATA/ACCT.BACKUP`](DATA/ACCT.BACKUP) | VSAM KSDS image with yesterday's balances (4 accounts) |
-| [`DATA/TRANS.LOG`](DATA/TRANS.LOG) | Today's transaction log (Credits and Debits) |
-| [`DATA/TB.TB_ACCOUNTS`](DATA/TB.TB_ACCOUNTS) | DB2 table image with current actual balances |
-| [`DATA/RECON.REPORT`](DATA/RECON.REPORT) | Reconciliation report after program execution |
-
-### Test Data Summary
-
-**VSAM ACCT.BACKUP (Yesterday's balances):**
-```
-000100: 10200.00
-000200: 50000.00
-000300: 25000.00
-000400: 10000.00
-```
-
-**TRANS.LOG (Today's transactions):**
-```
-000100 C 50.00
-000100 D 20.00
-000200 C 10.00
-000300 D 50.00
-000500 C 10.00
-000300 X 10.00  (invalid type)
-```
-
-**TB_ACCOUNTS (DB2 current balances):**
-```
-000100: 10500.00
-000200: 47500.00
-000300: 26000.00
-000500:  9500.00
-```
+| [`ACCT.BACKUP`](DATA/ACCT.BACKUP) | VSAM KSDS image with yesterday's balances (4 accounts) |
+| [`TRANS.LOG`](DATA/TRANS.LOG) | Today's transaction log (Credits and Debits) |
+| [`TB.TB_ACCOUNTS`](DATA/TB.TB_ACCOUNTS) | DB2 table image with current actual balances |
+| [`RECON.REPORT`](DATA/RECON.REPORT) | Reconciliation report after program execution |
 
 ---
 
 ## Expected SYSOUT
 
-Expected content of `RECON.REPORT`:
+Actual job output is stored in [`SYSOUT.txt`](OUTPUT/SYSOUT.txt).
 
 ```
-ACCOUNT  YESTERDAY  TODAY-TRNS  EXPECTED  ACTUAL  STATUS        DIFF
-000100   10200.00      +300.00  10500.00  10500.00  OK            +0.00
-000200   50000.00      +100.00  50100.00  47500.00  FAIL       -2600.00
-000300   25000.00      -500.00  24500.00  26000.00  FAIL       +1500.00
-NOT IN VSAM(BUT IN DB2): 000500
-NOT IN DB2 (BUT IN VSAM/PS): 000400
-
-TOTAL ACCOUNTS CHECKED: 4
-RECONCILED OK: 1
-DISCREPANCIES: 2
-ERRORS DATA: 2
+ ERROR: INCORRECT TYPE
 ```
 
 ---
 
 ## How to Run
 
-1. **Initialize DB2** — execute [`SQL/CREATE.TABLE.sql`](SQL/CREATE.TABLE.sql) to create `TB_ACCOUNTS` and load test rows.
-2. **Upload data** — transfer `DATA/ACCT.BACKUP` to `Z73460.TASK24.ACCT.BACKUP` and `DATA/TRANS.LOG` to `Z73460.TASK24.TRANS.LOG`.
+1. **Initialize DB2** — execute [`CREATE.TABLE.sql`](SQL/CREATE.TABLE.sql) to create `TB_ACCOUNTS` and load test rows.
+2. **Upload data** — Load [`ACCT.BACKUP`](DATA/ACCT.BACKUP) and [`DATA/TRANS.LOG`](DATA/TRANS.LOG) to your mainframe datasets manually through option '3.4 and edit your dataset' or with pre-prepared data
 3. **Submit JCL** — submit [`JCL/COBDB2CP.jcl`](JCL/COBDB2CP.jcl). The job will pre-compile, compile, link, and run the program.
-4. Check `Z73460.TASK24.RECON.REPORT` for the reconciliation report.
+4. Check [`RECON.REPORT`](DATA/RECON.REPORT) and [`SYSOUT.txt`](OUTPUT/SYSOUT.txt) for the reconciliation report.
 
 ---
 
