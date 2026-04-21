@@ -5,9 +5,9 @@
 Implements a modular COBOL batch system that reads employee sales records from a sequential file, computes commission and tax amounts by calling two specialized subprograms, and writes a formatted payout report. The system demonstrates inter-program communication via `CALL ... USING` and the `LINKAGE SECTION`.
 
 The three programs work together:
-- **`JOBSUB22`** (Main) — reads [`SALES.DATA`](DATA/SALES.DATA), calls `SUB1JB22` and `SUB2JB22` for each record, writes results to [`COMM.PAYOUT`](DATA/COMM.PAYOUT).
-- **`SUB1JB22`** (Commission Calculator) — receives region and sales amount; returns commission amount based on regional base rate and volume bonus.
-- **`SUB2JB22`** (Tax Calculator) — receives commission amount; returns tax amount based on bracket rules.
+- **[`JOBSUB22`](COBOL/JOBSUB22)** (Main) — reads [`SALES.DATA`](DATA/SALES.DATA), calls [`SUB1JB22`](COBOL/SUB1JB22) and [`SUB2JB22`](COBOL/SUB2JB22) for each record, writes results to [`COMM.PAYOUT`](DATA/COMM.PAYOUT).
+- **[`SUB1JB22`](COBOL/SUB1JB22)** (Commission Calculator) — receives region and sales amount; returns commission amount based on regional base rate and volume bonus.
+- **[`SUB2JB22`](COBOL/SUB2JB22)** (Tax Calculator) — receives commission amount; returns tax amount based on bracket rules.
 
 ---
 
@@ -15,10 +15,10 @@ The three programs work together:
 
 | DD Name | File | Org | Mode | Description |
 |---|---|---|---|---|
-| `SALESDD` | `SALES.DATA` | PS | INPUT | Sequential sales input, RECFM=F, LRECL=80 |
-| `PAYOUTDD` | `COMM.PAYOUT` | PS | OUTPUT | Formatted commission payout report |
+| `SALESDD` | [`SALES.DATA`](DATA/SALES.DATA) | PS | INPUT | Sequential sales input, RECFM=F, LRECL=80 |
+| `PAYOUTDD` | [`COMM.PAYOUT`](DATA/COMM.PAYOUT) | PS | OUTPUT | Formatted commission payout report |
 
-### Input Record Layout — `SALES.DATA` (`SALESDD`), LRECL=80, RECFM=F
+### Input Record Layout — (`SALESDD`), LRECL=80, RECFM=F
 
 | Field | Position | Format | Description |
 |---|---|---|---|
@@ -27,7 +27,7 @@ The three programs work together:
 | `SALES-AMT` | 8–15 | `9(6)V99` | Total sales amount in dollars |
 | `FILLER` | 16–80 | `X(65)` | Reserved |
 
-### Output Record Layout — `COMM.PAYOUT` (`PAYOUTDD`)
+### Output Record Layout — (`PAYOUTDD`)
 
 | Field | Picture | Description |
 |---|---|---|
@@ -107,11 +107,11 @@ All input and output files are in the [`DATA/`](DATA/) folder.
 
 ## How to Run
 
-1. Submit [`JCL/COMPRUN.jcl`](JCL/COMPRUN.jcl). The job will:
+1. Submit [`COMPRUN.jcl`](JCL/COMPRUN.jcl). The job will:
    - Delete previous datasets (`STEP005`).
-   - Populate `SALES.DATA` via `IEBGENER` (`STEP010`).
+   - Populate [`SALES.DATA`](DATA/SALES.DATA) via `IEBGENER` (`STEP010`).
    - Compile all three COBOL programs, link them into one load module, and run (`STEP015`).
-2. Check `Z73460.TASK22.COMM.PAYOUT` for the payout report.
+2. Check [`COMM.PAYOUT`](DATA/COMM.PAYOUT)` for the payout report.
 
 ---
 
